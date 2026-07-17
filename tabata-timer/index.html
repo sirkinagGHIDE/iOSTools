@@ -48,6 +48,29 @@ input {
   padding: 4px 8px;
 }
 
+input::placeholder {
+  color: #777;
+  opacity: 1;
+}
+
+.setup-nav {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.navBtn {
+  flex: 1;
+  margin: 0;
+  font-size: 16px;
+  padding: 8px 10px;
+  background: #333;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 6px;
+}
+
 #startBtn {
   margin-top: 30px;
   font-size: 22px;
@@ -110,12 +133,17 @@ button:active {
     <span id="setupRemaining">0:00</span>
   </div>
 
-  <div class="setup-row"><span>Work (s)</span><input id="work" value="30" type="number" inputmode="numeric" min="0" step="5"></div>
-  <div class="setup-row"><span>Rest (s)</span><input id="rest" value="15" type="number" inputmode="numeric" min="0" step="5"></div>
-  <div class="setup-row"><span>Rounds / Set</span><input id="rounds" value="8" type="number" inputmode="numeric" min="1" step="1"></div>
-  <div class="setup-row"><span>Sets</span><input id="sets" value="3" type="number" inputmode="numeric" min="1" step="1"></div>
-  <div class="setup-row"><span>Set Break (s)</span><input id="setBreak" value="60" type="number" inputmode="numeric" min="0" step="5"></div>
-  <div class="setup-row"><span>Start Delay (s)</span><input id="delay" value="5" type="number" inputmode="numeric" min="0" step="5"></div>
+  <div class="setup-nav">
+    <button type="button" class="navBtn" onclick="moveFocus(-1)">← Back</button>
+    <button type="button" class="navBtn" onclick="moveFocus(1)">Next →</button>
+  </div>
+
+  <div class="setup-row"><span>Work (s)</span><input id="work" type="number" inputmode="numeric" min="0" step="5" placeholder="30"></div>
+  <div class="setup-row"><span>Rest (s)</span><input id="rest" type="number" inputmode="numeric" min="0" step="5" placeholder="15"></div>
+  <div class="setup-row"><span>Rounds / Set</span><input id="rounds" type="number" inputmode="numeric" min="1" step="1" placeholder="8"></div>
+  <div class="setup-row"><span>Sets</span><input id="sets" type="number" inputmode="numeric" min="1" step="1" placeholder="3"></div>
+  <div class="setup-row"><span>Set Break (s)</span><input id="setBreak" type="number" inputmode="numeric" min="0" step="5" placeholder="60"></div>
+  <div class="setup-row"><span>Start Delay (s)</span><input id="delay" type="number" inputmode="numeric" min="0" step="5" placeholder="5"></div>
 
   <button id="startBtn" onclick="startWorkout()">Start</button>
 </div>
@@ -178,6 +206,8 @@ function fmt(sec) {
 }
 
 // ---------- Live Remaining (Setup) ----------
+const setupFieldOrder = ["work","rest","rounds","sets","setBreak","delay"];
+
 function updateSetupRemaining() {
   const work = +document.getElementById("work").value;
   const rest = +document.getElementById("rest").value;
@@ -194,9 +224,22 @@ function updateSetupRemaining() {
   document.getElementById("setupRemaining").innerText = fmt(total);
 }
 
-["work","rest","rounds","sets","setBreak","delay"].forEach(id =>
-  document.getElementById(id).addEventListener("input", updateSetupRemaining)
-);
+function moveFocus(direction) {
+  const currentIndex = setupFieldOrder.findIndex(id => document.activeElement?.id === id);
+  const targetIndex = (currentIndex + direction + setupFieldOrder.length) % setupFieldOrder.length;
+  const targetInput = document.getElementById(setupFieldOrder[targetIndex]);
+
+  if (targetInput) {
+    targetInput.focus();
+    targetInput.select();
+  }
+}
+
+setupFieldOrder.forEach(id => {
+  const input = document.getElementById(id);
+  input.addEventListener("input", updateSetupRemaining);
+  input.addEventListener("focus", () => input.select());
+});
 
 updateSetupRemaining();
 
