@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Unit Price Comparator</title>
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Unit Price">
+<meta name="theme-color" content="#05050a">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%2305050a'/%3E%3Ccircle cx='90' cy='90' r='55' fill='%236aa8ff'/%3E%3Ccircle cx='90' cy='90' r='35' fill='%23c9e0ff'/%3E%3C/svg%3E">
+
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: radial-gradient(circle at 50% 0%, #14182a 0%, #05050a 60%);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    color: #f2f4f8;
+  }
+  #app {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: env(safe-area-inset-top, 0) 16px calc(env(safe-area-inset-bottom, 0) + 40px);
+  }
+  header {
+    text-align: center;
+    padding: 28px 10px 20px;
+  }
+  .title {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+    background: linear-gradient(135deg, #6aa8ff, #8f7bff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: #8d93a8;
+    line-height: 1.4;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+
+  .controls-row {
+    display: flex;
+    gap: 12px;
+  }
+  .field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .field-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #9aa1b8;
+    margin-bottom: 8px;
+  }
+  select, input[type="text"], input[type="number"] {
+    appearance: none;
+    -webkit-appearance: none;
+    background: rgba(255,255,255,0.08);
+    color: #f2f4f8;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 11px 10px;
+    width: 100%;
+  }
+  select:focus, input:focus { outline: none; border-color: #6aa8ff; }
+  input::placeholder { color: #666c80; font-weight: 400; }
+
+  .item-card {
+    position: relative;
+  }
+  .item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .item-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #c9e0ff;
+  }
+  .item-badge .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: linear-gradient(135deg, #6aa8ff, #8f7bff);
+  }
+  .ref-tag {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #05050a;
+    background: linear-gradient(135deg, #6aa8ff, #8f7bff);
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-weight: 700;
+  }
+  .item-fields {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .price-wrap {
+    position: relative;
+  }
+  .price-wrap span {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9aa1b8;
+    font-weight: 600;
+    font-size: 16px;
+    pointer-events: none;
+  }
+  .price-wrap input {
+    padding-left: 22px;
+  }
+
+  /* ---------- Results ---------- */
+  #resultsCard { display: none; }
+  #resultsCard.show { display: block; }
+  .result-summary {
+    font-size: 14px;
+    color: #9aa1b8;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .result-summary b { color: #f2f4f8; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #9aa1b8;
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  td {
+    padding: 10px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  tr.best td { color: #a8f0c6; }
+  .name-cell {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .best-pill {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #05050a;
+    background: linear-gradient(135deg, #7ee2a8, #5ec98f);
+    border-radius: 999px;
+    padding: 2px 8px;
+    white-space: nowrap;
+  }
+  .unit-cost {
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .diff {
+    font-size: 12px;
+    color: #ff9d9d;
+  }
+  tr.best .diff { color: #a8f0c6; }
+
+  #resetBtn {
+    display: block;
+    margin: 24px auto 0;
+    background: rgba(255,255,255,0.08);
+    color: #f2f4f8;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 999px;
+    font-size: 14px;
+    padding: 11px 26px;
+  }
+  #resetBtn:active { transform: scale(0.97); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="title">Unit Price Comparator</div>
+    <div class="subtitle">Compare cost per unit across items, even when they're priced in different sizes.</div>
+  </header>
+
+  <div class="card">
+    <div class="controls-row">
+      <div class="field">
+        <div class="field-label">Comparing</div>
+        <select id="typeSelect">
+          <option value="mass">Mass (weight)</option>
+          <option value="volume">Volume</option>
+          <option value="count">Count</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="field-label">Items to compare</div>
+        <select id="countSelect"></select>
+      </div>
+    </div>
+  </div>
+
+  <div id="itemsContainer"></div>
+
+  <div class="card" id="resultsCard">
+    <div class="field-label" style="margin-bottom:10px;">Comparison</div>
+    <div class="result-summary" id="resultSummary"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Price / Qty</th>
+          <th id="unitColHeader">Cost / unit</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+  </div>
+
+  <button id="resetBtn">Reset All</button>
+
+</div>
+
+<script>
+(function () {
+  const UNITS = {
+    mass: {
+      baseLabel: 'g',
+      options: [
+        { v: 'mg', label: 'mg', factor: 0.001 },
+        { v: 'g',  label: 'g',  factor: 1 },
+        { v: 'kg', label: 'kg', factor: 1000 },
+        { v: 'oz', label: 'oz', factor: 28.349523125 },
+        { v: 'lb', label: 'lb', factor: 453.59237 }
+      ],
+      defaultUnit: 'oz'
+    },
+    volume: {
+      baseLabel: 'mL',
+      options: [
+        { v: 'mL',   label: 'mL',     factor: 1 },
+        { v: 'L',    label: 'L',      factor: 1000 },
+        { v: 'tsp',  label: 'tsp',    factor: 4.92892159375 },
+        { v: 'tbsp', label: 'tbsp',   factor: 14.78676478125 },
+        { v: 'floz', label: 'fl oz',  factor: 29.5735295625 },
+        { v: 'cup',  label: 'cup',    factor: 236.5882365 },
+        { v: 'pint', label: 'pint',   factor: 473.176473 },
+        { v: 'quart',label: 'quart',  factor: 946.352946 },
+        { v: 'gal',  label: 'gallon', factor: 3785.411784 }
+      ],
+      defaultUnit: 'floz'
+    },
+    count: {
+      baseLabel: 'each',
+      options: [
+        { v: 'each',  label: 'each',  factor: 1 },
+        { v: 'pair',  label: 'pair',  factor: 2 },
+        { v: 'dozen', label: 'dozen', factor: 12 },
+        { v: 'gross', label: 'gross', factor: 144 }
+      ],
+      defaultUnit: 'each'
+    }
+  };
+
+  const typeSelect = document.getElementById('typeSelect');
+  const countSelect = document.getElementById('countSelect');
+  const itemsContainer = document.getElementById('itemsContainer');
+  const resultsCard = document.getElementById('resultsCard');
+  const resultSummary = document.getElementById('resultSummary');
+  const resultsBody = document.getElementById('resultsBody');
+  const unitColHeader = document.getElementById('unitColHeader');
+  const resetBtn = document.getElementById('resetBtn');
+
+  for (let i = 1; i <= 8; i++) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = i === 1 ? '1 item (unit breakdown)' : i + ' items';
+    if (i === 3) opt.selected = true;
+    countSelect.appendChild(opt);
+  }
+
+  // Preserve entered values (name/price/qty) across type/count changes when possible.
+  let itemState = [];
+
+  function unitOptionsHtml(type, selectedUnit) {
+    return UNITS[type].options.map(o =>
+      `<option value="${o.v}"${o.v === selectedUnit ? ' selected' : ''}>${o.label}</option>`
+    ).join('');
+  }
+
+  function buildItemCard(index, type, totalCount) {
+    const state = itemState[index] || {};
+    const unit = state.unit && UNITS[type].options.some(o => o.v === state.unit)
+      ? state.unit
+      : UNITS[type].defaultUnit;
+
+    const div = document.createElement('div');
+    div.className = 'card item-card';
+    div.dataset.index = index;
+    div.innerHTML = `
+      <div class="item-head">
+        <span class="item-badge"><span class="dot"></span>Item ${index + 1}</span>
+        ${index === 0 && totalCount > 1 ? '<span class="ref-tag">Reference unit</span>' : ''}
+      </div>
+      <div class="item-fields">
+        <input type="text" class="name-input" placeholder="Name (optional), e.g. Store Brand" value="${state.name || ''}">
+        <div class="row2">
+          <div class="price-wrap">
+            <span>$</span>
+            <input type="number" class="price-input" placeholder="Price" min="0" step="0.01" inputmode="decimal" value="${state.price || ''}">
+          </div>
+          <input type="number" class="qty-input" placeholder="Qty" min="0" step="any" inputmode="decimal" value="${state.qty || ''}">
+          <select class="unit-select">${unitOptionsHtml(type, unit)}</select>
+        </div>
+      </div>
+    `;
+    return div;
+  }
+
+  function renderItems() {
+    const n = parseInt(countSelect.value, 10);
+    const type = typeSelect.value;
+    itemsContainer.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      itemsContainer.appendChild(buildItemCard(i, type, n));
+    }
+    attachItemListeners();
+    recalculate();
+  }
+
+  function attachItemListeners() {
+    itemsContainer.querySelectorAll('.item-card').forEach(card => {
+      card.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('input', recalculate);
+        el.addEventListener('change', recalculate);
+      });
+    });
+  }
+
+  function readItems() {
+    const type = typeSelect.value;
+    const cards = Array.from(itemsContainer.querySelectorAll('.item-card'));
+    return cards.map((card, i) => {
+      const name = card.querySelector('.name-input').value.trim();
+      const price = parseFloat(card.querySelector('.price-input').value);
+      const qty = parseFloat(card.querySelector('.qty-input').value);
+      const unit = card.querySelector('.unit-select').value;
+      itemState[i] = { name: card.querySelector('.name-input').value, price: card.querySelector('.price-input').value, qty: card.querySelector('.qty-input').value, unit };
+      const unitDef = UNITS[type].options.find(o => o.v === unit);
+      const valid = !isNaN(price) && price > 0 && !isNaN(qty) && qty > 0 && unitDef;
+      let baseCost = null;
+      if (valid) {
+        const totalBase = qty * unitDef.factor;
+        baseCost = price / totalBase; // cost per 1 base unit (g / mL / each)
+      }
+      return {
+        label: name || `Item ${i + 1}`,
+        price, qty, unit, unitLabel: unitDef ? unitDef.label : unit,
+        valid, baseCost
+      };
+    });
+  }
+
+  function fmtMoney(v) {
+    if (v >= 1) return '$' + v.toFixed(2);
+    if (v >= 0.01) return '$' + v.toFixed(3);
+    return '$' + v.toFixed(5);
+  }
+
+  function recalculate() {
+    const type = typeSelect.value;
+    const items = readItems();
+
+    if (items.length === 1) {
+      renderSingleItemBreakdown(type, items[0]);
+      return;
+    }
+
+    const refUnitDef = UNITS[type].options.find(o => o.v === items[0].unit) || UNITS[type].options[0];
+    const refLabel = refUnitDef.label;
+
+    unitColHeader.textContent = `Cost / ${refLabel}`;
+
+    const validItems = items.filter(it => it.valid);
+    if (validItems.length < 2) {
+      resultsCard.classList.remove('show');
+      return;
+    }
+
+    // Convert each item's cost-per-base-unit into cost-per-item1-unit.
+    const rows = items.map(it => {
+      if (!it.valid) return { ...it, convCost: null };
+      const convCost = it.baseCost * refUnitDef.factor;
+      return { ...it, convCost };
+    });
+
+    const valid = rows.filter(r => r.convCost !== null);
+    const minCost = Math.min(...valid.map(r => r.convCost));
+    const maxCost = Math.max(...valid.map(r => r.convCost));
+
+    resultsBody.innerHTML = rows.map(r => {
+      if (r.convCost === null) {
+        return `<tr><td class="name-cell">${escapeHtml(r.label)}</td><td>—</td><td>—</td></tr>`;
+      }
+      const isBest = r.convCost === minCost && minCost !== maxCost;
+      const pctMore = minCost > 0 ? ((r.convCost - minCost) / minCost) * 100 : 0;
+      return `
+        <tr class="${isBest ? 'best' : ''}">
+          <td class="name-cell">${escapeHtml(r.label)}${isBest ? '<span class="best-pill">Best value</span>' : ''}</td>
+          <td>$${r.price.toFixed(2)} / ${trimNum(r.qty)} ${r.unitLabel}</td>
+          <td>
+            <div class="unit-cost">${fmtMoney(r.convCost)} <span style="font-weight:400;color:#9aa1b8;font-size:12px;">/ ${refLabel}</span></div>
+            ${isBest ? '' : `<div class="diff">+${pctMore.toFixed(0)}% vs best</div>`}
+          </td>
+        </tr>`;
+    }).join('');
+
+    const bestRow = valid.find(r => r.convCost === minCost);
+    const worstRow = valid.find(r => r.convCost === maxCost);
+    if (bestRow && worstRow && bestRow !== worstRow) {
+      const savings = ((worstRow.convCost - bestRow.convCost) / worstRow.convCost) * 100;
+      resultSummary.innerHTML = `<b>${escapeHtml(bestRow.label)}</b> is the best value at <b>${fmtMoney(bestRow.convCost)}/${refLabel}</b> — that's <b>${savings.toFixed(0)}% cheaper</b> than <b>${escapeHtml(worstRow.label)}</b>.`;
+    } else {
+      resultSummary.textContent = 'All compared items cost the same per unit.';
+    }
+
+    resultsCard.classList.add('show');
+  }
+
+  function renderSingleItemBreakdown(type, item) {
+    unitColHeader.textContent = 'Cost / unit';
+
+    if (!item.valid) {
+      resultsCard.classList.remove('show');
+      return;
+    }
+
+    resultsBody.innerHTML = UNITS[type].options.map(o => {
+      const cost = item.baseCost * o.factor;
+      const isEntered = o.v === item.unit;
+      return `
+        <tr class="${isEntered ? 'best' : ''}">
+          <td class="name-cell">${o.label}${isEntered ? '<span class="best-pill">As entered</span>' : ''}</td>
+          <td>$${item.price.toFixed(2)} / ${trimNum(item.qty)} ${item.unitLabel}</td>
+          <td>
+            <div class="unit-cost">${fmtMoney(cost)} <span style="font-weight:400;color:#9aa1b8;font-size:12px;">/ ${o.label}</span></div>
+          </td>
+        </tr>`;
+    }).join('');
+
+    resultSummary.innerHTML = `Here's <b>${escapeHtml(item.label)}</b>'s price broken down across every ${type} unit.`;
+
+    resultsCard.classList.add('show');
+  }
+
+  function trimNum(n) {
+    return Number.isInteger(n) ? n : parseFloat(n.toFixed(3));
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function resetAll() {
+    itemState = [];
+    typeSelect.value = 'mass';
+    countSelect.value = '3';
+    renderItems();
+  }
+
+  typeSelect.addEventListener('change', renderItems);
+  countSelect.addEventListener('change', renderItems);
+  resetBtn.addEventListener('click', resetAll);
+
+  renderItems();
+})();
+</script>
+</body>
+</html>
