@@ -46,6 +46,8 @@ input {
   border: 1px solid #444;
   border-radius: 6px;
   padding: 4px 8px;
+  touch-action: none;
+  cursor: ns-resize;
 }
 
 #startBtn {
@@ -110,12 +112,12 @@ button:active {
     <span id="setupRemaining">0:00</span>
   </div>
 
-  <div class="setup-row"><span>Work (s)</span><input id="work" value="30" type="number" min="0" step="5"></div>
-  <div class="setup-row"><span>Rest (s)</span><input id="rest" value="15" type="number" min="0" step="5"></div>
-  <div class="setup-row"><span>Rounds / Set</span><input id="rounds" value="8" type="number"></div>
-  <div class="setup-row"><span>Sets</span><input id="sets" value="3" type="number"></div>
-  <div class="setup-row"><span>Set Break (s)</span><input id="setBreak" value="60" type="number" min="0" step="5"></div>
-  <div class="setup-row"><span>Start Delay (s)</span><input id="delay" value="5" type="number" min="0" step="5"></div>
+  <div class="setup-row"><span>Work (s)</span><input id="work" value="30" type="text" inputmode="numeric" readonly min="0" step="5"></div>
+  <div class="setup-row"><span>Rest (s)</span><input id="rest" value="15" type="text" inputmode="numeric" readonly min="0" step="5"></div>
+  <div class="setup-row"><span>Rounds / Set</span><input id="rounds" value="8" type="text" inputmode="numeric" readonly step="1"></div>
+  <div class="setup-row"><span>Sets</span><input id="sets" value="3" type="text" inputmode="numeric" readonly step="1"></div>
+  <div class="setup-row"><span>Set Break (s)</span><input id="setBreak" value="60" type="text" inputmode="numeric" readonly min="0" step="5"></div>
+  <div class="setup-row"><span>Start Delay (s)</span><input id="delay" value="5" type="text" inputmode="numeric" readonly min="0" step="5"></div>
 
   <button id="startBtn" onclick="startWorkout()">Start</button>
 </div>
@@ -196,19 +198,55 @@ function updateSetupRemaining() {
 
 function attachWheelStep(inputId, stepValue = 5) {
   const input = document.getElementById(inputId);
+  const minValue = Number(input.min) || 0;
+
+  const updateValue = (nextValue) => {
+    const currentValue = Number(input.value) || 0;
+    const clampedValue = Math.max(minValue, nextValue);
+
+    if (clampedValue !== currentValue) {
+      input.value = String(clampedValue);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  };
+
+  input.addEventListener("focus", () => input.blur());
+  input.addEventListener("keydown", (event) => event.preventDefault());
 
   input.addEventListener("wheel", (event) => {
     const delta = event.deltaY < 0 ? stepValue : -stepValue;
-    const currentValue = Number(input.value) || 0;
-    const nextValue = Math.max(0, currentValue + delta);
-
-    if (nextValue !== currentValue) {
-      input.value = String(nextValue);
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-    }
-
+    updateValue((Number(input.value) || 0) + delta);
     event.preventDefault();
   }, { passive: false });
+
+  let touchStartY = null;
+  let touchStartValue = null;
+
+  input.addEventListener("touchstart", (event) => {
+    if (event.touches.length === 1) {
+      touchStartY = event.touches[0].clientY;
+      touchStartValue = Number(input.value) || 0;
+    }
+  }, { passive: true });
+
+  input.addEventListener("touchmove", (event) => {
+    if (touchStartY === null || event.touches.length !== 1) return;
+
+    const deltaY = event.touches[0].clientY - touchStartY;
+    if (Math.abs(deltaY) >= 12) {
+      const direction = deltaY < 0 ? 1 : -1;
+      const magnitude = Math.max(1, Math.floor(Math.abs(deltaY) / 24));
+      updateValue(touchStartValue + direction * magnitude * stepValue);
+      touchStartY = event.touches[0].clientY;
+      touchStartValue = Number(input.value) || 0;
+      event.preventDefault();
+    }
+  }, { passive: false });
+
+  input.addEventListener("touchend", () => {
+    touchStartY = null;
+    touchStartValue = null;
+  });
 }
 
 ["work","rest","rounds","sets","setBreak","delay"].forEach(id =>
