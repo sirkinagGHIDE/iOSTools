@@ -46,8 +46,6 @@ input {
   border: 1px solid #444;
   border-radius: 6px;
   padding: 4px 8px;
-  touch-action: none;
-  cursor: ns-resize;
 }
 
 #startBtn {
@@ -196,66 +194,9 @@ function updateSetupRemaining() {
   document.getElementById("setupRemaining").innerText = fmt(total);
 }
 
-function attachWheelStep(inputId, stepValue = 5) {
-  const input = document.getElementById(inputId);
-  const minValue = Number(input.min) || 0;
-
-  const updateValue = (nextValue) => {
-    const currentValue = Number(input.value) || 0;
-    const clampedValue = Math.max(minValue, nextValue);
-
-    if (clampedValue !== currentValue) {
-      input.value = String(clampedValue);
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-    }
-  };
-
-  input.addEventListener("focus", () => {
-    input.select();
-  });
-
-  input.addEventListener("wheel", (event) => {
-    const delta = event.deltaY < 0 ? stepValue : -stepValue;
-    updateValue((Number(input.value) || 0) + delta);
-    event.preventDefault();
-  }, { passive: false });
-
-  let touchStartY = null;
-  let touchStartValue = null;
-
-  input.addEventListener("touchstart", (event) => {
-    if (event.touches.length === 1) {
-      touchStartY = event.touches[0].clientY;
-      touchStartValue = Number(input.value) || 0;
-    }
-  }, { passive: true });
-
-  input.addEventListener("touchmove", (event) => {
-    if (touchStartY === null || event.touches.length !== 1) return;
-
-    const deltaY = event.touches[0].clientY - touchStartY;
-    if (Math.abs(deltaY) >= 12) {
-      const direction = deltaY < 0 ? 1 : -1;
-      const magnitude = Math.max(1, Math.floor(Math.abs(deltaY) / 24));
-      updateValue(touchStartValue + direction * magnitude * stepValue);
-      touchStartY = event.touches[0].clientY;
-      touchStartValue = Number(input.value) || 0;
-      event.preventDefault();
-    }
-  }, { passive: false });
-
-  input.addEventListener("touchend", () => {
-    touchStartY = null;
-    touchStartValue = null;
-  });
-}
-
 ["work","rest","rounds","sets","setBreak","delay"].forEach(id =>
   document.getElementById(id).addEventListener("input", updateSetupRemaining)
 );
-
-["work","rest","setBreak","delay"].forEach(id => attachWheelStep(id));
-["rounds","sets"].forEach(id => attachWheelStep(id, 1));
 
 updateSetupRemaining();
 
