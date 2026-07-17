@@ -157,17 +157,11 @@
     font-weight: 600;
     letter-spacing: 0.5px;
     text-align: center;
-  }
-  .seconds-text {
-    position: relative;
-    font-size: 15px;
-    color: #9aa1b8;
-    margin-top: 6px;
-    text-align: center;
+    margin-bottom: 36px;
   }
   #stopBtn {
-    position: absolute;
-    bottom: calc(env(safe-area-inset-bottom, 0) + 26px);
+    position: relative;
+    margin-bottom: calc(env(safe-area-inset-bottom, 0) + 26px);
     background: rgba(255,255,255,0.08);
     color: #f2f4f8;
     border: 1px solid rgba(255,255,255,0.15);
@@ -209,7 +203,6 @@
       <div id="circle"></div>
     </div>
     <div class="phase-text" id="phaseLabelEl">Breathe In</div>
-    <div class="seconds-text" id="secondsEl">0</div>
     <button id="stopBtn">End Session</button>
   </div>
 
@@ -226,7 +219,6 @@
   const breathScreen = document.getElementById('breathScreen');
   const circle = document.getElementById('circle');
   const phaseLabelEl = document.getElementById('phaseLabelEl');
-  const secondsEl = document.getElementById('secondsEl');
   const cycleEl = document.getElementById('cycleEl');
 
   function fillOptions(select, max, defaultVal) {
@@ -303,8 +295,6 @@
     circle.style.transform = `translate(-50%, -50%) scale(${scale})`;
 
     phaseLabelEl.textContent = PHASE_LABELS[phaseIndex];
-    const remaining = Math.max(0, Math.ceil((dur - elapsedPhase) / 1000));
-    secondsEl.textContent = remaining;
 
     if (frac >= 1) {
       phaseIndex = (phaseIndex + 1) % 4;
