@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Box Breathing</title>
+
+<!-- iOS home screen app behavior -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Breathe">
+<meta name="theme-color" content="#05050a">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%2305050a'/%3E%3Ccircle cx='90' cy='90' r='55' fill='%236aa8ff'/%3E%3Ccircle cx='90' cy='90' r='35' fill='%23c9e0ff'/%3E%3C/svg%3E">
+
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    position: fixed;
+    inset: 0;
+    touch-action: none;
+    background: #05050a;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    color: #f2f4f8;
+  }
+  #app {
+    height: 100%;
+    width: 100%;
+    position: relative;
+  }
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+    opacity: 1;
+    transition: opacity 0.4s ease;
+  }
+  .screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* ---------- Config screen ---------- */
+  #configScreen {
+    background: radial-gradient(circle at 50% 20%, #14182a 0%, #05050a 70%);
+  }
+  .title {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    font-size: 15px;
+    color: #8d93a8;
+    margin-bottom: 28px;
+    text-align: center;
+    padding: 0 30px;
+  }
+  .picker-row {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 34px;
+  }
+  .picker-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 14px 10px;
+    width: 92px;
+  }
+  .picker-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #9aa1b8;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: rgba(255,255,255,0.08);
+    color: #f2f4f8;
+    border: none;
+    border-radius: 10px;
+    font-size: 20px;
+    font-weight: 600;
+    padding: 10px 8px;
+    width: 100%;
+    text-align: center;
+    text-align-last: center;
+  }
+  select:focus { outline: none; }
+
+  #startBtn {
+    background: linear-gradient(135deg, #6aa8ff, #8f7bff);
+    color: #05050a;
+    border: none;
+    border-radius: 999px;
+    font-size: 18px;
+    font-weight: 700;
+    padding: 16px 54px;
+    letter-spacing: 0.3px;
+    box-shadow: 0 8px 30px rgba(106,168,255,0.35);
+  }
+  #startBtn:active { transform: scale(0.97); }
+
+  /* ---------- Breath screen ---------- */
+  #breathScreen {
+    background: #05050a;
+  }
+  .cycle-count {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 0) + 22px);
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: #8d93a8;
+    text-transform: uppercase;
+  }
+  .circle-stage {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #circle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(78vw, 60vh);
+    height: min(78vw, 60vh);
+    border-radius: 50%;
+    background: hsl(210 70% 60%);
+    box-shadow: 0 0 70px 12px hsla(210,70%,60%,0.5);
+    transform: translate(-50%, -50%) scale(0.02);
+    will-change: transform, background, box-shadow;
+  }
+  .phase-text {
+    position: relative;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-align: center;
+  }
+  .seconds-text {
+    position: relative;
+    font-size: 15px;
+    color: #9aa1b8;
+    margin-top: 6px;
+    text-align: center;
+  }
+  #stopBtn {
+    position: absolute;
+    bottom: calc(env(safe-area-inset-bottom, 0) + 26px);
+    background: rgba(255,255,255,0.08);
+    color: #f2f4f8;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 999px;
+    font-size: 15px;
+    padding: 12px 30px;
+  }
+  #stopBtn:active { transform: scale(0.97); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="configScreen" class="screen">
+    <div class="title">Box Breathing</div>
+    <div class="subtitle">Choose a duration for each phase, then begin.</div>
+
+    <div class="picker-row">
+      <div class="picker-group">
+        <div class="picker-label">Breathe In</div>
+        <select id="inhaleSelect"></select>
+      </div>
+      <div class="picker-group">
+        <div class="picker-label">Hold</div>
+        <select id="holdSelect"></select>
+      </div>
+      <div class="picker-group">
+        <div class="picker-label">Breathe Out</div>
+        <select id="exhaleSelect"></select>
+      </div>
+    </div>
+
+    <button id="startBtn">Start</button>
+  </div>
+
+  <div id="breathScreen" class="screen hidden">
+    <div class="cycle-count" id="cycleEl">Cycle 1</div>
+    <div class="circle-stage">
+      <div id="circle"></div>
+    </div>
+    <div class="phase-text" id="phaseLabelEl">Breathe In</div>
+    <div class="seconds-text" id="secondsEl">0</div>
+    <button id="stopBtn">End Session</button>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  const inhaleSelect = document.getElementById('inhaleSelect');
+  const holdSelect = document.getElementById('holdSelect');
+  const exhaleSelect = document.getElementById('exhaleSelect');
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const configScreen = document.getElementById('configScreen');
+  const breathScreen = document.getElementById('breathScreen');
+  const circle = document.getElementById('circle');
+  const phaseLabelEl = document.getElementById('phaseLabelEl');
+  const secondsEl = document.getElementById('secondsEl');
+  const cycleEl = document.getElementById('cycleEl');
+
+  function fillOptions(select, max, defaultVal) {
+    for (let i = 1; i <= max; i++) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = i + ' sec';
+      if (i === defaultVal) opt.selected = true;
+      select.appendChild(opt);
+    }
+  }
+  fillOptions(inhaleSelect, 30, 4);
+  fillOptions(holdSelect, 30, 4);
+  fillOptions(exhaleSelect, 30, 4);
+
+  const MIN_SCALE = 0.02;
+  const MAX_SCALE = 1;
+
+  // Smootherstep: zero velocity and acceleration at both ends, so motion
+  // eases gently out of a hold, speeds up through the middle, and eases
+  // gently into the next hold.
+  function easeInOut(t) {
+    return t * t * t * (t * (t * 6 - 15) + 10);
+  }
+
+  let rafId = null;
+  let phaseIndex = 0;
+  let phaseStart = 0;
+  let sessionStart = 0;
+  let cycleCount = 1;
+  let durationsMs = [4000, 4000, 4000, 4000];
+  let cycleDurationMs = 16000;
+  let wakeLock = null;
+
+  const PHASE_LABELS = ['Breathe In', 'Hold', 'Breathe Out', 'Hold'];
+
+  async function requestWakeLock() {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await navigator.wakeLock.request('screen');
+      }
+    } catch (e) { /* ignore, not critical */ }
+  }
+  function releaseWakeLock() {
+    if (wakeLock) {
+      wakeLock.release().catch(() => {});
+      wakeLock = null;
+    }
+  }
+
+  function scaleForPhase(idx, frac) {
+    const eased = easeInOut(frac);
+    if (idx === 0) { // inhale: exponential grow
+      return MIN_SCALE * Math.pow(MAX_SCALE / MIN_SCALE, eased);
+    } else if (idx === 1) { // hold full
+      return MAX_SCALE;
+    } else if (idx === 2) { // exhale: exponential shrink
+      return MAX_SCALE * Math.pow(MIN_SCALE / MAX_SCALE, eased);
+    }
+    return MIN_SCALE; // hold at pinpoint
+  }
+
+  function tick(now) {
+    const elapsedTotal = now - sessionStart;
+    const hue = (elapsedTotal / cycleDurationMs * 360) % 360;
+    circle.style.background = `hsl(${hue.toFixed(1)} 70% 60%)`;
+    circle.style.boxShadow = `0 0 70px 12px hsla(${hue.toFixed(1)},70%,60%,0.5)`;
+
+    const dur = durationsMs[phaseIndex];
+    const elapsedPhase = now - phaseStart;
+    const frac = Math.min(elapsedPhase / dur, 1);
+
+    const scale = scaleForPhase(phaseIndex, frac);
+    circle.style.transform = `translate(-50%, -50%) scale(${scale})`;
+
+    phaseLabelEl.textContent = PHASE_LABELS[phaseIndex];
+    const remaining = Math.max(0, Math.ceil((dur - elapsedPhase) / 1000));
+    secondsEl.textContent = remaining;
+
+    if (frac >= 1) {
+      phaseIndex = (phaseIndex + 1) % 4;
+      phaseStart = now;
+      if (phaseIndex === 0) {
+        cycleCount++;
+        cycleEl.textContent = 'Cycle ' + cycleCount;
+      }
+    }
+
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function startSession() {
+    const inhaleS = parseInt(inhaleSelect.value, 10);
+    const holdS = parseInt(holdSelect.value, 10);
+    const exhaleS = parseInt(exhaleSelect.value, 10);
+
+    durationsMs = [inhaleS * 1000, holdS * 1000, exhaleS * 1000, holdS * 1000];
+    cycleDurationMs = durationsMs.reduce((a, b) => a + b, 0);
+
+    phaseIndex = 0;
+    cycleCount = 1;
+    cycleEl.textContent = 'Cycle 1';
+
+    configScreen.classList.add('hidden');
+    breathScreen.classList.remove('hidden');
+
+    requestWakeLock();
+
+    sessionStart = performance.now();
+    phaseStart = sessionStart;
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function stopSession() {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    releaseWakeLock();
+    breathScreen.classList.add('hidden');
+    configScreen.classList.remove('hidden');
+    circle.style.transform = 'translate(-50%, -50%) scale(0.02)';
+  }
+
+  startBtn.addEventListener('click', startSession);
+  stopBtn.addEventListener('click', stopSession);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !breathScreen.classList.contains('hidden') && !wakeLock) {
+      requestWakeLock();
+    }
+  });
+})();
+</script>
+</body>
+</html>
