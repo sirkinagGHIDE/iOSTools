@@ -140,8 +140,8 @@
   const RELAX_SEC = 10;
   const TOTAL_ROUNDS = 10;
 
-  const HOLD_COLOR = '#7a1f1f';
-  const RELAX_COLOR = '#1f5a3c';
+  const HOLD_COLOR = '#8a2418';
+  const RELAX_COLOR = '#154d73';
 
   const introScreen = document.getElementById('introScreen');
   const counterScreen = document.getElementById('counterScreen');
@@ -168,15 +168,18 @@
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.frequency.value = freq;
-    gain.gain.value = 0.5;
     const t0 = audioCtx.currentTime + startOffset;
+    const peak = 0.16;
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(peak, t0 + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
     osc.start(t0);
-    osc.stop(t0 + dur);
+    osc.stop(t0 + dur + 0.02);
   }
   // End of Hold -> time to relax: descending two-tone chime.
   function beepHoldEnd() {
-    tone(880, 0, 0.18, 'square');
-    tone(554, 0.2, 0.22, 'square');
+    tone(880, 0, 0.18, 'sine');
+    tone(554, 0.2, 0.22, 'sine');
   }
   // End of Relax -> time to hold: ascending two-tone chime.
   function beepRelaxEnd() {
