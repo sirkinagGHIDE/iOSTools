@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Exercise Counter</title>
+
+<!-- iOS home screen app behavior -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Exercise">
+<meta name="theme-color" content="#111">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23111'/%3E%3Ccircle cx='90' cy='90' r='55' fill='%23ff5a3c'/%3E%3Ccircle cx='90' cy='90' r='35' fill='%23ffd7cf'/%3E%3C/svg%3E">
+
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    position: fixed;
+    inset: 0;
+    touch-action: none;
+    background: #111;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    color: #fff;
+    transition: background-color 0.25s ease;
+  }
+  #app { height: 100%; width: 100%; position: relative; }
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+    opacity: 1;
+    transition: opacity 0.4s ease;
+  }
+  .screen.hidden { opacity: 0; pointer-events: none; }
+
+  /* ---------- Intro screen ---------- */
+  #introScreen { background: radial-gradient(circle at 50% 20%, #201a1a 0%, #111 70%); }
+  .title { font-size: 28px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .subtitle {
+    font-size: 15px;
+    color: #b8b0ad;
+    margin-bottom: 34px;
+    text-align: center;
+    padding: 0 30px;
+    line-height: 1.5;
+  }
+  #startBtn {
+    background: linear-gradient(135deg, #ff5a3c, #ff8a3c);
+    color: #111;
+    border: none;
+    border-radius: 999px;
+    font-size: 18px;
+    font-weight: 700;
+    padding: 16px 54px;
+    letter-spacing: 0.3px;
+    box-shadow: 0 8px 30px rgba(255,90,60,0.35);
+  }
+  #startBtn:active { transform: scale(0.97); }
+
+  /* ---------- Counter screen ---------- */
+  #counterScreen { background: #111; }
+  .round-count {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 0) + 22px);
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.75);
+    text-transform: uppercase;
+  }
+  .phase-text {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-align: center;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  #count {
+    font-size: 120px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 36px;
+  }
+  #pauseBtn, #stopBtn {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 999px;
+    font-size: 15px;
+    padding: 12px 30px;
+    margin: 6px;
+  }
+  #pauseBtn:active, #stopBtn:active { transform: scale(0.97); }
+
+  /* ---------- Done screen ---------- */
+  #doneScreen { background: #111; }
+  .done-title { font-size: 30px; font-weight: 800; margin-bottom: 10px; }
+  .done-sub { font-size: 15px; color: #b8b0ad; margin-bottom: 34px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="introScreen" class="screen">
+    <div class="title">Exercise Counter</div>
+    <div class="subtitle">10 seconds hold, 10 seconds relax,<br>for 10 rounds.</div>
+    <button id="startBtn">Start</button>
+  </div>
+
+  <div id="counterScreen" class="screen hidden">
+    <div class="round-count" id="roundEl">Round 1 / 10</div>
+    <div class="phase-text" id="phaseEl">Hold</div>
+    <div id="count">10</div>
+    <div>
+      <button id="pauseBtn">Pause</button>
+      <button id="stopBtn">End</button>
+    </div>
+  </div>
+
+  <div id="doneScreen" class="screen hidden">
+    <div class="done-title">Nice work!</div>
+    <div class="done-sub">10 rounds complete.</div>
+    <button id="restartBtn">Start Again</button>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  const HOLD_SEC = 10;
+  const RELAX_SEC = 10;
+  const TOTAL_ROUNDS = 10;
+
+  const HOLD_COLOR = '#7a1f1f';
+  const RELAX_COLOR = '#1f5a3c';
+
+  const introScreen = document.getElementById('introScreen');
+  const counterScreen = document.getElementById('counterScreen');
+  const doneScreen = document.getElementById('doneScreen');
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const roundEl = document.getElementById('roundEl');
+  const phaseEl = document.getElementById('phaseEl');
+  const countEl = document.getElementById('count');
+
+  // ---------- Audio ----------
+  // Browsers block audio until a user gesture; audioCtx is created lazily on Start.
+  let audioCtx = null;
+  function ensureAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+  function tone(freq, startOffset, dur, type) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.value = freq;
+    gain.gain.value = 0.5;
+    const t0 = audioCtx.currentTime + startOffset;
+    osc.start(t0);
+    osc.stop(t0 + dur);
+  }
+  // End of Hold -> time to relax: descending two-tone chime.
+  function beepHoldEnd() {
+    tone(880, 0, 0.18, 'square');
+    tone(554, 0.2, 0.22, 'square');
+  }
+  // End of Relax -> time to hold: ascending two-tone chime.
+  function beepRelaxEnd() {
+    tone(554, 0, 0.18, 'sine');
+    tone(880, 0.2, 0.22, 'sine');
+  }
+  function beepComplete() {
+    tone(660, 0, 0.2, 'sine');
+    tone(880, 0.22, 0.2, 'sine');
+    tone(1100, 0.44, 0.35, 'sine');
+  }
+
+  let wakeLock = null;
+  async function requestWakeLock() {
+    try {
+      if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    } catch (e) { /* ignore, not critical */ }
+  }
+  function releaseWakeLock() {
+    if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+  }
+
+  let timerId = null;
+  let phase = 'hold';   // 'hold' | 'relax'
+  let round = 1;
+  let secondsLeft = HOLD_SEC;
+  let paused = false;
+
+  function applyPhaseUI() {
+    document.body.style.backgroundColor = phase === 'hold' ? HOLD_COLOR : RELAX_COLOR;
+    phaseEl.textContent = phase === 'hold' ? 'Hold' : 'Relax';
+    roundEl.textContent = 'Round ' + round + ' / ' + TOTAL_ROUNDS;
+    countEl.textContent = secondsLeft;
+  }
+
+  function tick() {
+    if (paused) return;
+    secondsLeft--;
+
+    if (secondsLeft <= 0) {
+      if (phase === 'hold') {
+        beepHoldEnd();
+        phase = 'relax';
+        secondsLeft = RELAX_SEC;
+      } else {
+        if (round >= TOTAL_ROUNDS) {
+          beepComplete();
+          finish();
+          return;
+        }
+        beepRelaxEnd();
+        round++;
+        phase = 'hold';
+        secondsLeft = HOLD_SEC;
+      }
+    }
+    applyPhaseUI();
+  }
+
+  function startSession() {
+    ensureAudio();
+    round = 1;
+    phase = 'hold';
+    secondsLeft = HOLD_SEC;
+    paused = false;
+    pauseBtn.textContent = 'Pause';
+
+    introScreen.classList.add('hidden');
+    doneScreen.classList.add('hidden');
+    counterScreen.classList.remove('hidden');
+
+    applyPhaseUI();
+    requestWakeLock();
+
+    if (timerId) clearInterval(timerId);
+    timerId = setInterval(tick, 1000);
+  }
+
+  function finish() {
+    if (timerId) clearInterval(timerId);
+    timerId = null;
+    releaseWakeLock();
+    document.body.style.backgroundColor = '#111';
+    counterScreen.classList.add('hidden');
+    doneScreen.classList.remove('hidden');
+  }
+
+  function stopSession() {
+    if (timerId) clearInterval(timerId);
+    timerId = null;
+    releaseWakeLock();
+    document.body.style.backgroundColor = '#111';
+    counterScreen.classList.add('hidden');
+    introScreen.classList.remove('hidden');
+  }
+
+  function togglePause() {
+    paused = !paused;
+    pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+  }
+
+  startBtn.addEventListener('click', startSession);
+  restartBtn.addEventListener('click', startSession);
+  stopBtn.addEventListener('click', stopSession);
+  pauseBtn.addEventListener('click', togglePause);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !counterScreen.classList.contains('hidden') && !wakeLock) {
+      requestWakeLock();
+    }
+  });
+})();
+</script>
+</body>
+</html>
