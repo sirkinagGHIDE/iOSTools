@@ -48,6 +48,18 @@ input {
   padding: 4px 8px;
 }
 
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
 #startBtn {
   margin-top: 30px;
   font-size: 22px;
@@ -274,7 +286,7 @@ function startWorkout() {
       timeline.push({ type: "Work", set, round, duration: workSec });
       totalDuration += workSec;
 
-      if (!(set === totalSets && round === roundsPerSet)) {
+      if (round < roundsPerSet) {
         timeline.push({ type: "Rest", set, round, duration: restSec });
         totalDuration += restSec;
       }
