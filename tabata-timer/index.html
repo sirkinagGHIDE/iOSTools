@@ -110,12 +110,12 @@ button:active {
     <span id="setupRemaining">0:00</span>
   </div>
 
-  <div class="setup-row"><span>Work (s)</span><input id="work" value="30" type="number"></div>
-  <div class="setup-row"><span>Rest (s)</span><input id="rest" value="15" type="number"></div>
-  <div class="setup-row"><span>Rounds / Set</span><input id="rounds" value="8" type="number"></div>
-  <div class="setup-row"><span>Sets</span><input id="sets" value="3" type="number"></div>
-  <div class="setup-row"><span>Set Break (s)</span><input id="setBreak" value="60" type="number"></div>
-  <div class="setup-row"><span>Start Delay (s)</span><input id="delay" value="5" type="number"></div>
+  <div class="setup-row"><span>Work (s)</span><input id="work" placeholder="30" type="text" inputmode="numeric" pattern="[0-9]*"></div>
+  <div class="setup-row"><span>Rest (s)</span><input id="rest" placeholder="15" type="text" inputmode="numeric" pattern="[0-9]*"></div>
+  <div class="setup-row"><span>Rounds / Set</span><input id="rounds" placeholder="8" type="text" inputmode="numeric" pattern="[0-9]*"></div>
+  <div class="setup-row"><span>Sets</span><input id="sets" placeholder="3" type="text" inputmode="numeric" pattern="[0-9]*"></div>
+  <div class="setup-row"><span>Set Break (s)</span><input id="setBreak" placeholder="60" type="text" inputmode="numeric" pattern="[0-9]*"></div>
+  <div class="setup-row"><span>Start Delay (s)</span><input id="delay" placeholder="5" type="text" inputmode="numeric" pattern="[0-9]*"></div>
 
   <button id="startBtn" onclick="startWorkout()">Start</button>
 </div>
@@ -177,14 +177,21 @@ function fmt(sec) {
   return m + ":" + s.toString().padStart(2, "0");
 }
 
+// ---------- Field value (falls back to the ghost placeholder) ----------
+function fieldValue(id) {
+  const el = document.getElementById(id);
+  const raw = el.value.trim();
+  return Number(raw !== "" ? raw : el.placeholder);
+}
+
 // ---------- Live Remaining (Setup) ----------
 function updateSetupRemaining() {
-  const work = +document.getElementById("work").value;
-  const rest = +document.getElementById("rest").value;
-  const rounds = +document.getElementById("rounds").value;
-  const sets = +document.getElementById("sets").value;
-  const setBreak = +document.getElementById("setBreak").value;
-  const delay = +document.getElementById("delay").value;
+  const work = fieldValue("work");
+  const rest = fieldValue("rest");
+  const rounds = fieldValue("rounds");
+  const sets = fieldValue("sets");
+  const setBreak = fieldValue("setBreak");
+  const delay = fieldValue("delay");
 
   let total =
     delay +
@@ -194,9 +201,14 @@ function updateSetupRemaining() {
   document.getElementById("setupRemaining").innerText = fmt(total);
 }
 
-["work","rest","rounds","sets","setBreak","delay"].forEach(id =>
-  document.getElementById(id).addEventListener("input", updateSetupRemaining)
-);
+["work","rest","rounds","sets","setBreak","delay"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => {
+    const digitsOnly = el.value.replace(/[^0-9]/g, "");
+    if (digitsOnly !== el.value) el.value = digitsOnly;
+    updateSetupRemaining();
+  });
+});
 
 updateSetupRemaining();
 
@@ -248,12 +260,12 @@ function backToSetup() {
 function startWorkout() {
   ensureAudio();
 
-  const workSec = Number(document.getElementById("work").value);
-  const restSec = Number(document.getElementById("rest").value);
-  const roundsPerSet = Number(document.getElementById("rounds").value);
-  const totalSets = Number(document.getElementById("sets").value);
-  const setBreakSec = Number(document.getElementById("setBreak").value);
-  const startDelaySec = Number(document.getElementById("delay").value);
+  const workSec = fieldValue("work");
+  const restSec = fieldValue("rest");
+  const roundsPerSet = fieldValue("rounds");
+  const totalSets = fieldValue("sets");
+  const setBreakSec = fieldValue("setBreak");
+  const startDelaySec = fieldValue("delay");
 
   timeline = [];
   totalDuration = 0;
@@ -274,7 +286,7 @@ function startWorkout() {
       timeline.push({ type: "Work", set, round, duration: workSec });
       totalDuration += workSec;
 
-      if (!(set === totalSets && round === roundsPerSet)) {
+      if (round < roundsPerSet) {
         timeline.push({ type: "Rest", set, round, duration: restSec });
         totalDuration += restSec;
       }
@@ -351,8 +363,8 @@ function tick() {
 
   document.getElementById("roundSet").innerText =
     phase.round
-      ? "Round: " + phase.round + " / " + document.getElementById("rounds").value +
-        "    Set: " + phase.set + " / " + document.getElementById("sets").value
+      ? "Round: " + phase.round + " / " + fieldValue("rounds") +
+        "    Set: " + phase.set + " / " + fieldValue("sets")
       : "";
 
   const totalElapsed =
