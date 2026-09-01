@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #1a1d1b;
+    --surface: #212420;
+    --surface-2: #262a25;
+    --line: #383d36;
+    --text: #e8e6e0;
+    --muted: #8a8f87;
+    --amber: #e8a33d;
+    --red: #c1543c;
+    --green: #6f9e75;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(var(--bg), var(--bg));
+    background-color:var(--bg);
+    color:var(--text);
+    font-family:'Barlow Condensed', sans-serif;
+    min-height:100vh;
+    padding:32px 20px 80px;
+  }
+  .wrap{max-width:900px;margin:0 auto;}
+
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom:2px solid var(--line);
+    padding-bottom:18px;
+    margin-bottom:28px;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  header h1{
+    font-size:38px;
+    font-weight:700;
+    margin:0;
+    letter-spacing:0.5px;
+    line-height:1;
+  }
+  header .sub{
+    color:var(--muted);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    margin-top:6px;
+  }
+  #today{
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--muted);
+    font-size:13px;
+    text-align:right;
+  }
+
+  .section{margin-bottom:30px;}
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .section-head h2{
+    font-size:20px;
+    font-weight:600;
+    margin:0;
+    color:var(--text);
+  }
+  .section-head .count{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+  }
+  .section-head::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background:var(--line);
+  }
+
+  .row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding:14px 4px;
+    border-bottom:1px solid var(--line);
+  }
+  .row:last-child{border-bottom:none;}
+
+  .row-label{
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    flex:1;
+  }
+  .row-label .name{
+    font-size:19px;
+    font-weight:500;
+  }
+  .row-label .date{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+    margin-top:2px;
+  }
+
+  .row-right{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-shrink:0;
+  }
+
+  .gauge{
+    font-family:'IBM Plex Mono',monospace;
+    text-align:right;
+    min-width:64px;
+  }
+  .gauge .n{
+    font-size:26px;
+    font-weight:600;
+    line-height:1;
+  }
+  .gauge .u{
+    font-size:10px;
+    color:var(--muted);
+    display:block;
+    margin-top:2px;
+  }
+  .ok .n{color:var(--green);}
+  .warn .n{color:var(--amber);}
+  .over .n{color:var(--red);}
+
+  button.mark{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--muted);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    padding:8px 10px;
+    cursor:pointer;
+    transition:border-color .15s, color .15s;
+  }
+  button.mark:hover{border-color:var(--amber);color:var(--amber);}
+
+  button.del{
+    background:transparent;
+    border:none;
+    color:var(--muted);
+    font-size:16px;
+    cursor:pointer;
+    line-height:1;
+    padding:4px 6px;
+    opacity:.5;
+  }
+  button.del:hover{opacity:1;color:var(--red);}
+
+  .date-input{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    padding:6px 8px;
+    width:120px;
+    color-scheme: dark;
+  }
+
+  .add-row{
+    display:flex;
+    gap:8px;
+    padding:14px 4px 4px;
+    flex-wrap:wrap;
+  }
+  .add-row input, .add-row select{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:'Barlow Condensed', sans-serif;
+    font-size:14px;
+    padding:8px 10px;
+  }
+  .add-row input[type="text"]{flex:1;min-width:140px;}
+  .add-row input[type="date"]{font-family:'IBM Plex Mono',monospace;font-size:12px;color-scheme:dark;width:130px;}
+  .add-row button{
+    background:var(--amber);
+    border:none;
+    color:#1a1d1b;
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:8px 16px;
+    cursor:pointer;
+  }
+  .add-row button:hover{background:#f0b055;}
+
+  .new-category{
+    display:flex;
+    gap:8px;
+    margin-bottom:20px;
+    align-items:center;
+  }
+  .new-category input{
+    background:var(--surface);
+    border:1px dashed var(--line);
+    color:var(--muted);
+    font-family:'Barlow Condensed', sans-serif;
+    font-size:14px;
+    padding:8px 10px;
+    flex:1;
+    max-width:260px;
+  }
+  .new-category button{
+    background:transparent;
+    border:1px dashed var(--line);
+    color:var(--muted);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    padding:8px 12px;
+    cursor:pointer;
+  }
+  .new-category button:hover{border-color:var(--amber);color:var(--amber);}
+
+  .empty{
+    color:var(--muted);
+    font-size:14px;
+    padding:10px 4px;
+    font-style:italic;
+  }
+
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    margin-top:50px;
+  }
+
+  @media (max-width:600px){
+    header h1{font-size:30px;}
+    #today{text-align:left;}
+    .row{flex-wrap:wrap;}
+    .row-right{width:100%;justify-content:space-between;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Logbook</h1>
+      <div class="sub">days since last</div>
+    </div>
+    <div id="today"></div>
+  </header>
+
+  <div id="sections"></div>
+
+  <div class="new-category">
+    <input type="text" id="newCatName" placeholder="Add a new category (e.g. Vehicles)">
+    <button onclick="addCategory()">+ Category</button>
+  </div>
+
+  <footer>data stored locally in this browser · edit index.html to change thresholds</footer>
+</div>
+
+<script>
+/* ---------- data model ---------- */
+// Each item: { id, label, last: 'YYYY-MM-DD', warnDays, overDays }
+// warnDays/overDays control gauge color. Set to null to disable coloring.
+const DEFAULT_DATA = {
+  categories: [
+    {
+      name: "Personal",
+      items: [
+        { id: "haircut", label: "Haircut", last: todayISO(), warnDays: 21, overDays: 35 },
+        { id: "bathe-baby", label: "Bathed \u201cBaby Name\u201d", last: todayISO(), warnDays: 2, overDays: 4 },
+      ]
+    },
+    {
+      name: "Yard & Equipment",
+      items: [
+        { id: "mow", label: "Mowed", last: todayISO(), warnDays: 7, overDays: 12 },
+        { id: "fuel-mower", label: "Refueled mower", last: todayISO(), warnDays: 14, overDays: 21 },
+        { id: "fuel-chainsaw", label: "Refueled chainsaw", last: todayISO(), warnDays: 60, overDays: 120 },
+        { id: "fuel-weedeater", label: "Refueled weed eater", last: todayISO(), warnDays: 21, overDays: 35 },
+      ]
+    },
+    {
+      name: "Work",
+      items: [
+        { id: "work-trip", label: "Work trip", last: todayISO(), warnDays: 30, overDays: 60 },
+        { id: "teams-post", label: "Teams post", last: todayISO(), warnDays: 3, overDays: 7 },
+        { id: "blog", label: "Blog post", last: todayISO(), warnDays: 14, overDays: 30 },
+      ]
+    }
+  ]
+};
+
+const STORAGE_KEY = "logbook-data-v1";
+
+function todayISO(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+
+function loadData(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw){
+    saveData(DEFAULT_DATA);
+    return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  }
+  try{
+    return JSON.parse(raw);
+  }catch(e){
+    console.error("Corrupt data, resetting.", e);
+    saveData(DEFAULT_DATA);
+    return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  }
+}
+
+function saveData(data){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+let state = loadData();
+
+/* ---------- rendering ---------- */
+
+function daysSince(dateStr){
+  const last = new Date(dateStr + "T00:00:00");
+  const now = new Date();
+  const nowMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = Math.round((nowMid - last) / 86400000);
+  return diff;
+}
+
+function gaugeClass(days, warnDays, overDays){
+  if(overDays != null && days >= overDays) return "over";
+  if(warnDays != null && days >= warnDays) return "warn";
+  return "ok";
+}
+
+function fmtDate(dateStr){
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+}
+
+function render(){
+  document.getElementById("today").textContent = "today \u00b7 " + fmtDate(todayISO());
+
+  const container = document.getElementById("sections");
+  container.innerHTML = "";
+
+  state.categories.forEach((cat, catIdx) => {
+    const section = document.createElement("div");
+    section.className = "section";
+
+    const head = document.createElement("div");
+    head.className = "section-head";
+    head.innerHTML = `<h2>${escapeHtml(cat.name)}</h2><span class="count">${cat.items.length} tracked</span>`;
+    section.appendChild(head);
+
+    if(cat.items.length === 0){
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "Nothing tracked here yet.";
+      section.appendChild(empty);
+    }
+
+    cat.items.forEach((item, itemIdx) => {
+      const days = daysSince(item.last);
+      const cls = gaugeClass(days, item.warnDays, item.overDays);
+
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <div class="row-label">
+          <span class="name">${escapeHtml(item.label)}</span>
+          <span class="date">last: ${fmtDate(item.last)}</span>
+        </div>
+        <div class="row-right">
+          <div class="gauge ${cls}">
+            <span class="n">${days}</span>
+            <span class="u">day${days === 1 ? "" : "s"}</span>
+          </div>
+          <input type="date" class="date-input" value="${item.last}" data-cat="${catIdx}" data-item="${itemIdx}" onchange="setDate(event)">
+          <button class="mark" data-cat="${catIdx}" data-item="${itemIdx}" onclick="markToday(event)">TODAY</button>
+          <button class="del" data-cat="${catIdx}" data-item="${itemIdx}" onclick="deleteItem(event)" title="Remove">\u2715</button>
+        </div>
+      `;
+      section.appendChild(row);
+    });
+
+    const addRow = document.createElement("div");
+    addRow.className = "add-row";
+    addRow.innerHTML = `
+      <input type="text" placeholder="New item name" id="add-label-${catIdx}">
+      <input type="date" id="add-date-${catIdx}" value="${todayISO()}">
+      <button onclick="addItem(${catIdx})">+ Add</button>
+    `;
+    section.appendChild(addRow);
+
+    container.appendChild(section);
+  });
+}
+
+function escapeHtml(str){
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ---------- actions ---------- */
+
+function setDate(e){
+  const cat = e.target.dataset.cat, item = e.target.dataset.item;
+  state.categories[cat].items[item].last = e.target.value;
+  saveData(state);
+  render();
+}
+
+function markToday(e){
+  const cat = e.currentTarget.dataset.cat, item = e.currentTarget.dataset.item;
+  state.categories[cat].items[item].last = todayISO();
+  saveData(state);
+  render();
+}
+
+function deleteItem(e){
+  const cat = e.currentTarget.dataset.cat, item = e.currentTarget.dataset.item;
+  if(!confirm("Remove this tracker?")) return;
+  state.categories[cat].items.splice(item, 1);
+  saveData(state);
+  render();
+}
+
+function addItem(catIdx){
+  const labelInput = document.getElementById(`add-label-${catIdx}`);
+  const dateInput = document.getElementById(`add-date-${catIdx}`);
+  const label = labelInput.value.trim();
+  if(!label) return;
+  state.categories[catIdx].items.push({
+    id: label.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now(),
+    label: label,
+    last: dateInput.value || todayISO(),
+    warnDays: null,
+    overDays: null
+  });
+  saveData(state);
+  render();
+}
+
+function addCategory(){
+  const input = document.getElementById("newCatName");
+  const name = input.value.trim();
+  if(!name) return;
+  state.categories.push({ name: name, items: [] });
+  input.value = "";
+  saveData(state);
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
