@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plumb Line</title>
+<meta name="description" content="Lay out wall dimensions, item size and hole spacing to get exact mounting heights and offsets, to scale.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light dark;
+    --paper:#eef1f3;
+    --panel:#ffffff;
+    --panel-2:#f5f7f8;
+    --ink:#1b2430;
+    --ink-soft:#54606f;
+    --line:#c8d0d8;
+    --accent:#d9540c;
+    --accent-ink:#ffffff;
+    --accent-soft:#d9540c22;
+    --teal:#2e7d74;
+    --teal-soft:#2e7d7422;
+    --holedim:#3457c9;
+    --stud:#a9783f;
+    --warn:#b3261e;
+    --warn-soft:#b3261e14;
+    --focus:#2e7d74;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12161b;
+      --panel:#1b2129;
+      --panel-2:#20272f;
+      --ink:#e7ebee;
+      --ink-soft:#a3aebb;
+      --line:#333d48;
+      --accent:#ff8a4c;
+      --accent-ink:#171008;
+      --accent-soft:#ff8a4c2a;
+      --teal:#5cc2b3;
+      --teal-soft:#5cc2b322;
+      --holedim:#8fa6ff;
+      --stud:#c99a63;
+      --warn:#ff7a70;
+      --warn-soft:#ff7a701c;
+      --focus:#5cc2b3;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12161b;
+    --panel:#1b2129;
+    --panel-2:#20272f;
+    --ink:#e7ebee;
+    --ink-soft:#a3aebb;
+    --line:#333d48;
+    --accent:#ff8a4c;
+    --accent-ink:#171008;
+    --accent-soft:#ff8a4c2a;
+    --teal:#5cc2b3;
+    --teal-soft:#5cc2b322;
+    --holedim:#8fa6ff;
+    --stud:#c99a63;
+    --warn:#ff7a70;
+    --warn-soft:#ff7a701c;
+    --focus:#5cc2b3;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;}
+  .app{max-width:1240px;margin:0 auto;padding:28px 16px 56px;}
+  .masthead{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px 20px;margin-bottom:10px;}
+  .masthead h1{font-size:26px;margin:0;letter-spacing:.01em;}
+  .masthead h1 span{color:var(--accent);}
+  .masthead p{margin:2px 0 0;color:var(--ink-soft);font-size:13.5px;max-width:46ch;}
+  .layout{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start;}
+  @media (max-width:860px){.layout{grid-template-columns:1fr;}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;}
+  .form-panel{padding:20px;display:flex;flex-direction:column;gap:22px;}
+  section.group h2{font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-soft);margin:0 0 10px;font-weight:600;}
+  .row{display:flex;gap:10px;}
+  .row + .row{margin-top:10px;}
+  .field{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0;}
+  .field label{font-size:12px;color:var(--ink-soft);}
+  .field .unit-tag{color:var(--ink-soft);font-weight:400;}
+  input[type=text],select{
+    width:100%;font:inherit;font-family:"IBM Plex Mono",monospace;font-size:13.5px;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
+    padding:8px 9px;color:var(--ink);
+  }
+  input.text-field{font-family:"IBM Plex Sans",system-ui,sans-serif;}
+  select{font-family:"IBM Plex Sans",system-ui,sans-serif;}
+  input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--focus);outline-offset:1px;}
+  .unit-select{display:flex;align-items:center;gap:8px;}
+  .unit-select select{width:auto;flex:0 0 auto;}
+  .unit-hint{font-size:11px;color:var(--ink-soft);margin:6px 0 16px;line-height:1.4;}
+  .hint{font-size:11.5px;color:var(--ink-soft);margin:2px 0 0;line-height:1.4;}
+  .pattern-fields{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+  .holes-table{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+  .hole-row{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;}
+  .hole-row-head{display:flex;align-items:center;justify-content:space-between;}
+  .hole-tag{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;color:var(--accent);}
+  .hole-row .field{flex:1;}
+  .rm-hole{flex:0 0 auto;width:28px;height:28px;border-radius:7px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink-soft);font-size:15px;cursor:pointer;line-height:1;}
+  .rm-hole:hover{color:var(--warn);border-color:var(--warn);}
+  .btn{appearance:none;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);font:inherit;font-size:12.5px;font-weight:500;padding:8px 12px;border-radius:8px;cursor:pointer;}
+  .btn:hover{border-color:var(--ink-soft);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+  .btn.primary:hover{filter:brightness(1.06);}
+  .btn.ghost{background:transparent;}
+  .checkline{display:flex;align-items:center;gap:8px;font-size:13px;}
+  .checkline input{width:auto;}
+  .stud-group{margin-top:10px;display:flex;flex-direction:column;gap:10px;}
+  .diagram-panel{padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0;}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .stat{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;}
+  .stat .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);}
+  .stat .v{font-family:"IBM Plex Mono",monospace;font-size:18px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums;}
+  .warning{display:none;background:var(--warn-soft);border:1px solid var(--warn);color:var(--warn);border-radius:10px;padding:10px 13px;font-size:13px;line-height:1.5;}
+  .warning.show{display:block;}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11.5px;color:var(--ink-soft);}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .legend i{width:14px;height:3px;border-radius:2px;display:inline-block;}
+  .diagram-wrap{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:8px;overflow-x:auto;}
+  svg#diagram{width:100%;height:auto;display:block;min-width:560px;}
+  .spec{border-top:1px solid var(--line);padding-top:14px;}
+  .spec h2{font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:var(--ink-soft);margin:0 0 10px;font-weight:600;}
+  table.spec-table{width:100%;border-collapse:collapse;font-family:"IBM Plex Mono",monospace;font-size:12.5px;}
+  table.spec-table th{text-align:right;font-family:"IBM Plex Sans",sans-serif;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);font-weight:600;padding:0 8px 6px;border-bottom:1px solid var(--line);}
+  table.spec-table th:first-child,table.spec-table td:first-child{text-align:left;}
+  table.spec-table td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap;}
+  table.spec-table tr:last-child td{border-bottom:none;}
+  table.spec-table td.tag{font-family:"IBM Plex Sans",sans-serif;font-weight:600;color:var(--ink);white-space:nowrap;}
+  table.spec-table td.tag .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--holedim);margin-right:7px;}
+  .example-note{font-size:11.5px;color:var(--ink-soft);background:var(--teal-soft);border:1px solid var(--teal);border-radius:8px;padding:7px 10px;}
+  footer.credit{margin-top:18px;text-align:center;color:var(--ink-soft);font-size:11px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="masthead">
+    <div>
+      <h1>Plumb<span>Line</span></h1>
+      <p>Lay out wall dimensions, item size and hole spacing to get exact mounting heights and offsets, to scale.</p>
+    </div>
+    <div class="unit-select">
+      <label for="unit" style="font-size:12px;color:var(--ink-soft);">Units</label>
+      <select id="unit">
+        <option value="in" selected>inches</option>
+        <option value="mm">millimeters</option>
+      </select>
+    </div>
+  </div>
+  <p class="unit-hint">Inches accept fractions — try <code>34 1/2</code> or <code>3/4</code> — snapped to the nearest 1/16&Prime;. Switching units converts every field automatically.</p>
+
+  <div id="exampleNote" class="example-note" style="margin-bottom:16px;">Showing a sample layout — a floating shelf. Edit any field to switch it to your own wall and hardware.</div>
+
+  <div class="layout">
+    <aside class="panel form-panel" id="formPanel">
+
+      <section class="group">
+        <h2>Wall</h2>
+        <div class="row">
+          <div class="field">
+            <label for="wallW">Width <span class="unit-tag">(<span class="u">in</span>)</span></label>
+            <input type="text" inputmode="decimal" id="wallW" value="120">
+          </div>
+          <div class="field">
+            <label for="wallH">Height, floor–ceiling <span class="unit-tag">(<span class="u">in</span>)</span></label>
+            <input type="text" inputmode="decimal" id="wallH" value="96">
+          </div>
+        </div>
+      </section>
+
+      <section class="group">
+        <h2>Item being mounted</h2>
+        <div class="row">
+          <div class="field">
+            <label for="prodName">Name</label>
+            <input type="text" class="text-field" id="prodName" value="Floating shelf">
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="prodW">Width <span class="unit-tag">(<span class="u">in</span>)</span></label>
+            <input type="text" inputmode="decimal" id="prodW" value="34">
+          </div>
+          <div class="field">
+            <label for="prodH">Height <span class="unit-tag">(<span class="u">in</span>)</span></label>
+            <input type="text" inputmode="decimal" id="prodH" value="7 1/2">
+          </div>
+        </div>
+      </section>
+
+      <section class="group">
+        <h2>Mounting holes</h2>
+        <div class="field">
+          <label for="pattern">Hole pattern</label>
+          <select id="pattern">
+            <option value="single">Single point</option>
+            <option value="two" selected>Two points, horizontal</option>
+            <option value="four">Four points, rectangle</option>
+            <option value="custom">Custom list</option>
+          </select>
+        </div>
+
+        <div class="pattern-fields" id="fld-single" hidden>
+          <div class="field">
+            <label for="singleY">Distance from top edge of item <span class="unit-tag">(<span class="u">in</span>)</span></label>
+            <input type="text" inputmode="decimal" id="singleY" value="4">
+          </div>
+        </div>
+
+        <div class="pattern-fields" id="fld-two">
+          <div class="row">
+            <div class="field">
+              <label for="twoSpacing">Hole-to-hole spacing <span class="unit-tag">(<span class="u">in</span>)</span></label>
+              <input type="text" inputmode="decimal" id="twoSpacing" value="16">
+            </div>
+            <div class="field">
+              <label for="twoY">From top edge of item <span class="unit-tag">(<span class="u">in</span>)</span></label>
+              <input type="text" inputmode="decimal" id="twoY" value="2">
+            </div>
+          </div>
+        </div>
+
+        <div class="pattern-fields" id="fld-four" hidden>
+          <div class="row">
+            <div class="field">
+              <label for="fourHSpacing">Horizontal spacing <span class="unit-tag">(<span class="u">in</span>)</span></label>
+              <input type="text" inputmode="decimal" id="fourHSpacing" value="12">
+            </div>
+            <div class="field">
+              <label for="fourVSpacing">Vertical spacing <span class="unit-tag">(<span class="u">in</span>)</span></label>
+              <input type="text" inputmode="decimal" id="fourVSpacing" value="4">
+            </div>
+          </div>
+          <div class="field">
+            <label for="fourY">Top holes, from top edge of item <span class="unit-tag">(<span class="u">in</span>)</span></label>
+            <input type="text" inputmode="decimal" id="fourY" value="2">
+          </div>
+          <p class="hint">Both rows are centered horizontally on the item; the bottom row sits one vertical spacing below the top row.</p>
+        </div>
+
+        <div class="pattern-fields" id="fld-custom" hidden>
+          <div class="holes-table" id="holesBody"></div>
+          <button class="btn ghost" id="addHoleBtn" type="button">+ Add hole</button>
+          <p class="hint">Pick whichever corner each hole is measured from — handy when a spec sheet references different edges for different points.</p>
+        </div>
+      </section>
+
+      <section class="group">
+        <h2>Placement on wall</h2>
+        <div class="field">
+          <label for="hMode">Horizontal</label>
+          <select id="hMode">
+            <option value="center" selected>Centered on wall</option>
+            <option value="fromLeft">Distance from left wall to item's left edge</option>
+            <option value="fromRight">Distance from right wall to item's right edge</option>
+          </select>
+        </div>
+        <div class="field" id="hValueField" hidden style="margin-top:8px;">
+          <label for="hValue">Offset <span class="unit-tag">(<span class="u">in</span>)</span></label>
+          <input type="text" inputmode="decimal" id="hValue" value="0">
+        </div>
+
+        <div class="field" style="margin-top:12px;">
+          <label for="vMode">Vertical</label>
+          <select id="vMode">
+            <option value="fromFloorCenter" selected>Distance from floor to item's center</option>
+            <option value="fromFloorBottom">Distance from floor to item's bottom edge</option>
+            <option value="fromFloorTop">Distance from floor to item's top edge</option>
+            <option value="fromCeilingTop">Distance from ceiling to item's top edge</option>
+            <option value="fromCeilingCenter">Distance from ceiling to item's center</option>
+          </select>
+        </div>
+        <div class="field" style="margin-top:8px;">
+          <label for="vValue">Height <span class="unit-tag">(<span class="u">in</span>)</span></label>
+          <input type="text" inputmode="decimal" id="vValue" value="42">
+        </div>
+      </section>
+
+      <section class="group">
+        <h2>Studs</h2>
+        <label class="checkline"><input type="checkbox" id="showStuds" checked> Show stud lines in the diagram</label>
+        <div class="stud-group" id="studField">
+          <div class="field">
+            <label for="studSpacing">Stud spacing, on-center <span class="unit-tag">(<span class="u">in</span>)</span></label>
+            <input type="text" inputmode="decimal" id="studSpacing" value="16">
+          </div>
+          <div class="row">
+            <div class="field">
+              <label for="studRefWall">Reference stud, measured from</label>
+              <select id="studRefWall">
+                <option value="left" selected>Left wall</option>
+                <option value="right">Right wall</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="studPos">Distance to that stud <span class="unit-tag">(<span class="u">in</span>)</span></label>
+              <input type="text" inputmode="decimal" id="studPos" value="0">
+            </div>
+          </div>
+          <p class="hint">Find one stud with a finder, measure it from a wall, and enter it here — the rest are tiled at the spacing above and drawn in the diagram.</p>
+        </div>
+      </section>
+
+      <button class="btn" id="resetBtn" type="button">Reset to example</button>
+    </aside>
+
+    <main class="panel diagram-panel">
+      <div class="stats" id="stats"></div>
+      <div class="warning" id="warning"></div>
+      <div class="diagram-wrap">
+        <svg id="diagram" viewBox="0 0 900 660" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--teal);"></i> Item edges</span>
+        <span><i style="background:var(--holedim);"></i> Hole positions</span>
+        <span><i style="background:var(--stud);"></i> Studs</span>
+      </div>
+      <div class="spec">
+        <h2>Mounting spec</h2>
+        <div style="overflow-x:auto;">
+          <table class="spec-table" id="specTable"></table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="credit">Measure twice. All figures scale with the diagram above.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORE_KEY = "plumbline.v2";
+  var LENGTH_IDS = ["wallW","wallH","prodW","prodH","singleY","twoSpacing","twoY",
+    "fourHSpacing","fourVSpacing","fourY","hValue","vValue","studSpacing","studPos"];
+
+  function $(id){ return document.getElementById(id); }
+
+  function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); return b ? gcd(b, a%b) : (a||1); }
+
+  // Parse a length string in the given display unit into canonical inches.
+  function parseLength(raw, unit){
+    if(raw == null) return NaN;
+    var s = String(raw).trim();
+    if(s === "") return NaN;
+    if(unit === "mm"){
+      var vmm = parseFloat(s);
+      return isFinite(vmm) ? vmm/25.4 : NaN;
+    }
+    var neg = false;
+    if(s.charAt(0) === "-"){ neg = true; s = s.slice(1).trim(); }
+    var m = s.match(/^(\d+(?:\.\d+)?)?\s*-?\s*(\d+)\s*\/\s*(\d+)$/);
+    var val;
+    if(m && m[2] && m[3]){
+      var whole = m[1] ? parseFloat(m[1]) : 0;
+      var den = parseFloat(m[3]);
+      if(!den) return NaN;
+      val = whole + parseFloat(m[2])/den;
+    } else {
+      var v = parseFloat(s);
+      if(!isFinite(v)) return NaN;
+      val = v;
+    }
+    if(neg) val = -val;
+    return Math.round(val*16)/16; // snap to nearest 1/16"
+  }
+
+  // Format a canonical-inches value for display in the given unit (no unit suffix).
+  function formatLength(inches, unit){
+    if(!isFinite(inches)) return "";
+    if(unit === "mm"){
+      var mm = inches*25.4;
+      var rmm = Math.round(mm*10)/10;
+      return (Object.is(rmm,-0)?0:rmm).toString();
+    }
+    var v = Math.round(inches*16)/16;
+    var neg = v < -1e-9;
+    v = Math.abs(v);
+    var whole = Math.floor(v+1e-9);
+    var rem = Math.round((v-whole)*16);
+    if(rem === 16){ whole += 1; rem = 0; }
+    var str;
+    if(rem === 0){
+      str = String(whole);
+    } else {
+      var g = gcd(rem,16);
+      str = (whole>0 ? whole+" " : "") + (rem/g)+"/"+(16/g);
+    }
+    return (neg ? "-" : "") + str;
+  }
+
+  function getUnit(){ return $("unit").value; }
+
+  // Display string with unit suffix, for labels/tables/diagram.
+  function fmtDisp(inches){
+    if(!isFinite(inches)) return "—";
+    var unit = getUnit();
+    return unit === "mm" ? formatLength(inches,"mm")+" mm" : formatLength(inches,"in")+"″";
+  }
+
+  function len(id, fallback){
+    var el = $(id);
+    if(!el) return fallback;
+    var v = parseLength(el.value, getUnit());
+    return isFinite(v) ? v : fallback;
+  }
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  var customHoles = [
+    {x:8, y:4, xRef:"left", yRef:"top"},
+    {x:8, y:4, xRef:"right", yRef:"top"}
+  ];
+
+  function svgEl(tag, attrs, text){
+    var s = "<" + tag;
+    for(var k in attrs){ s += " " + k + '="' + attrs[k] + '"'; }
+    if(text !== undefined){ s += ">" + text + "</" + tag + ">"; }
+    else { s += "/>"; }
+    return s;
+  }
+
+  // ---- pattern field visibility ----
+  function syncPatternFields(){
+    var p = $("pattern").value;
+    $("fld-single").hidden = p !== "single";
+    $("fld-two").hidden = p !== "two";
+    $("fld-four").hidden = p !== "four";
+    $("fld-custom").hidden = p !== "custom";
+  }
+
+  function syncPlacementFields(){
+    $("hValueField").hidden = $("hMode").value === "center";
+  }
+
+  function syncStudField(){
+    $("studField").hidden = !$("showStuds").checked;
+  }
+
+  // ---- custom holes table ----
+  function renderHolesTable(){
+    var unit = getUnit();
+    var body = $("holesBody");
+    body.innerHTML = "";
+    customHoles.forEach(function(h, i){
+      if(!h.xRef) h.xRef = "left";
+      if(!h.yRef) h.yRef = "top";
+      var row = document.createElement("div");
+      row.className = "hole-row";
+      row.innerHTML =
+        '<div class="hole-row-head"><span class="hole-tag">Hole ' + (i+1) + '</span><button type="button" class="rm-hole" aria-label="Remove hole">×</button></div>' +
+        '<div class="row">' +
+          '<div class="field"><label>Horizontal, from</label><select class="holeXRef">' +
+            '<option value="left"' + (h.xRef==="left"?" selected":"") + '>Left edge</option>' +
+            '<option value="right"' + (h.xRef==="right"?" selected":"") + '>Right edge</option>' +
+          '</select></div>' +
+          '<div class="field"><label>Distance</label><input type="text" inputmode="decimal" class="holeX" value="' + esc(formatLength(h.x, unit)) + '"></div>' +
+        '</div>' +
+        '<div class="row">' +
+          '<div class="field"><label>Vertical, from</label><select class="holeYRef">' +
+            '<option value="top"' + (h.yRef==="top"?" selected":"") + '>Top edge</option>' +
+            '<option value="bottom"' + (h.yRef==="bottom"?" selected":"") + '>Bottom edge</option>' +
+          '</select></div>' +
+          '<div class="field"><label>Distance</label><input type="text" inputmode="decimal" class="holeY" value="' + esc(formatLength(h.y, unit)) + '"></div>' +
+        '</div>';
+      row.querySelector(".holeX").addEventListener("input", function(){
+        var v = parseLength(this.value, getUnit());
+        if(isFinite(v)) h.x = v;
+        render(); save();
+      });
+      row.querySelector(".holeY").addEventListener("input", function(){
+        var v = parseLength(this.value, getUnit());
+        if(isFinite(v)) h.y = v;
+        render(); save();
+      });
+      row.querySelector(".holeXRef").addEventListener("change", function(){
+        h.xRef = this.value;
+        render(); save();
+      });
+      row.querySelector(".holeYRef").addEventListener("change", function(){
+        h.yRef = this.value;
+        render(); save();
+      });
+      row.querySelector(".rm-hole").addEventListener("click", function(){
+        customHoles.splice(i,1);
+        renderHolesTable();
+        render(); save();
+      });
+      body.appendChild(row);
+    });
+  }
+
+  $("addHoleBtn").addEventListener("click", function(){
+    customHoles.push({x:0, y:0, xRef:"left", yRef:"top"});
+    renderHolesTable();
+    render(); save();
+  });
+
+  // ---- gather holes per pattern, relative to item's top-left corner (canonical inches) ----
+  function getHoles(Pw, Ph){
+    var p = $("pattern").value;
+    if(p === "single"){
+      return [{x: Pw/2, y: len("singleY",0)}];
+    }
+    if(p === "two"){
+      var sp = len("twoSpacing",0), y = len("twoY",0);
+      return [
+        {x: Pw/2 - sp/2, y: y},
+        {x: Pw/2 + sp/2, y: y}
+      ];
+    }
+    if(p === "four"){
+      var hs = len("fourHSpacing",0), vs = len("fourVSpacing",0), topY = len("fourY",0);
+      return [
+        {x: Pw/2 - hs/2, y: topY},
+        {x: Pw/2 + hs/2, y: topY},
+        {x: Pw/2 - hs/2, y: topY + vs},
+        {x: Pw/2 + hs/2, y: topY + vs}
+      ];
+    }
+    return customHoles.map(function(h){
+      var ox = (h.xRef === "right") ? (Pw - h.x) : h.x;
+      var oy = (h.yRef === "bottom") ? (Ph - h.y) : h.y;
+      return {x: ox, y: oy};
+    });
+  }
+
+  // ---- core geometry + render ----
+  function render(){
+    var unit = getUnit();
+    document.querySelectorAll(".u").forEach(function(s){ s.textContent = unit; });
+
+    var W = len("wallW", 0), H = len("wallH", 0);
+    var Pw = len("prodW", 0), Ph = len("prodH", 0);
+    var name = $("prodName").value.trim() || "Item";
+
+    var hMode = $("hMode").value, hValue = len("hValue", 0);
+    var vMode = $("vMode").value, vValue = len("vValue", 0);
+
+    var productLeft, productBottom;
+    if(hMode === "center") productLeft = (W - Pw) / 2;
+    else if(hMode === "fromLeft") productLeft = hValue;
+    else productLeft = W - hValue - Pw;
+    var productRight = productLeft + Pw;
+
+    if(vMode === "fromFloorBottom") productBottom = vValue;
+    else if(vMode === "fromFloorTop") productBottom = vValue - Ph;
+    else if(vMode === "fromFloorCenter") productBottom = vValue - Ph/2;
+    else if(vMode === "fromCeilingCenter") productBottom = H - vValue - Ph/2;
+    else productBottom = H - vValue - Ph; // fromCeilingTop
+    var productTop = productBottom + Ph;
+
+    var holes = getHoles(Pw, Ph).map(function(h, i){
+      var xAbs = productLeft + h.x;
+      var yAbs = productTop - h.y;
+      return {
+        idx: i+1, ox: h.x, oy: h.y,
+        xAbs: xAbs, yAbs: yAbs,
+        fromLeft: xAbs, fromRight: W - xAbs,
+        fromFloor: yAbs, fromCeiling: H - yAbs
+      };
+    });
+
+    // ---- validation / warnings ----
+    var warns = [];
+    if(!(W>0) || !(H>0)) warns.push("Enter a wall width and height greater than zero.");
+    if(!(Pw>0) || !(Ph>0)) warns.push("Enter item dimensions greater than zero.");
+    if(W>0 && H>0 && Pw>0 && Ph>0){
+      if(Pw > W) warns.push(name + " (" + fmtDisp(Pw) + " wide) is wider than the wall (" + fmtDisp(W) + ").");
+      if(Ph > H) warns.push(name + " (" + fmtDisp(Ph) + " tall) is taller than the wall (" + fmtDisp(H) + ").");
+      if(productLeft < -0.001) warns.push("Left edge falls " + fmtDisp(-productLeft) + " past the left wall.");
+      if(productRight > W + 0.001) warns.push("Right edge falls " + fmtDisp(productRight-W) + " past the right wall.");
+      if(productBottom < -0.001) warns.push("Bottom edge falls " + fmtDisp(-productBottom) + " below the floor.");
+      if(productTop > H + 0.001) warns.push("Top edge falls " + fmtDisp(productTop-H) + " above the ceiling.");
+    }
+    var warnEl = $("warning");
+    if(warns.length){
+      warnEl.innerHTML = "<strong>Check placement:</strong> " + warns.map(esc).join(" ");
+      warnEl.classList.add("show");
+    } else {
+      warnEl.classList.remove("show");
+    }
+
+    // ---- stats ----
+    var statsHtml = "";
+    statsHtml += '<div class="stat"><div class="k">Bottom edge, AFF</div><div class="v">' + fmtDisp(productBottom) + '</div></div>';
+    statsHtml += '<div class="stat"><div class="k">Left edge from wall</div><div class="v">' + fmtDisp(productLeft) + '</div></div>';
+    statsHtml += '<div class="stat"><div class="k">Mounting holes</div><div class="v">' + holes.length + '</div></div>';
+    $("stats").innerHTML = statsHtml;
+
+    // ---- spec table ----
+    var rows = "";
+    rows += '<tr><td class="tag"><span class="dot" style="background:var(--teal);"></span>' + esc(name) + ' edges</td>' +
+      "<td>" + fmtDisp(productLeft) + "</td><td>" + fmtDisp(W-productRight) + "</td><td>" + fmtDisp(productBottom) + "</td><td>" + fmtDisp(H-productTop) + "</td></tr>";
+    holes.forEach(function(h){
+      rows += '<tr><td class="tag"><span class="dot"></span>Hole ' + h.idx + "</td>" +
+        "<td>" + fmtDisp(h.fromLeft) + "</td><td>" + fmtDisp(h.fromRight) + "</td><td>" + fmtDisp(h.fromFloor) + "</td><td>" + fmtDisp(h.fromCeiling) + "</td></tr>";
+    });
+    $("specTable").innerHTML =
+      "<tr><th>Point</th><th>From left wall</th><th>From right wall</th><th>From floor (AFF)</th><th>From ceiling</th></tr>" + rows;
+
+    drawDiagram(W, H, Pw, Ph, productLeft, productRight, productBottom, productTop, holes, name);
+  }
+
+  function drawDiagram(W, H, Pw, Ph, pLeft, pRight, pBottom, pTop, holes, name){
+    var svg = $("diagram");
+    if(!(W>0) || !(H>0)){ svg.innerHTML=""; return; }
+
+    var n = Math.min(holes.length, 6);
+    var areaW = 720, areaH = 420;
+    var marginT = 50, marginR = 50;
+    var marginB = 95 + 30*n;
+    var marginL = 145 + 36*n;
+    var vbW = areaW + marginL + marginR, vbH = areaH + marginT + marginB;
+    svg.setAttribute("viewBox", "0 0 " + vbW + " " + vbH);
+
+    var scale = Math.min(areaW/W, areaH/H);
+    var wallPxW = W*scale, wallPxH = H*scale;
+    var wallLeftX = marginL + (areaW-wallPxW)/2;
+    var wallTopY = marginT + (areaH-wallPxH)/2;
+    var wallBottomY = wallTopY + wallPxH;
+    var wallRightX = wallLeftX + wallPxW;
+
+    function sx(xFromLeft){ return wallLeftX + xFromLeft*scale; }
+    function sy(yFromFloor){ return wallBottomY - yFromFloor*scale; }
+
+    var ink = "var(--ink)", inkSoft="var(--ink-soft)", line="var(--line)",
+        teal="var(--teal)", accent="var(--accent)", holedim="var(--holedim)", stud="var(--stud)";
+    var out = [];
+
+    function chipCenter(cx,cy,text,color){
+      var w = Math.max(46, text.length*6.3+12);
+      out.push(svgEl("rect",{x:cx-w/2,y:cy-9,width:w,height:15,fill:"var(--panel)",rx:3}));
+      out.push(svgEl("text",{x:cx,y:cy+3,"text-anchor":"middle","font-size":10.5,fill:color,"font-family":"IBM Plex Mono, monospace","font-weight":600}, esc(text)));
+    }
+    function chipEnd(endX,cy,text,color){
+      var w = Math.max(40, text.length*6.3+12);
+      out.push(svgEl("rect",{x:endX-w,y:cy-9,width:w,height:15,fill:"var(--panel)",rx:3}));
+      out.push(svgEl("text",{x:endX-6,y:cy+3,"text-anchor":"end","font-size":10.5,fill:color,"font-family":"IBM Plex Mono, monospace","font-weight":600}, esc(text)));
+    }
+    function hDim(x1,x2,y,text,color){
+      out.push(svgEl("line",{x1:x1,y1:y-5,x2:x1,y2:y+5,stroke:color,"stroke-width":1.3}));
+      out.push(svgEl("line",{x1:x2,y1:y-5,x2:x2,y2:y+5,stroke:color,"stroke-width":1.3}));
+      out.push(svgEl("line",{x1:x1,y1:y,x2:x2,y2:y,stroke:color,"stroke-width":1.3}));
+      chipCenter((x1+x2)/2, y-11, text, color);
+    }
+    function vDim(y1,y2,x,text,color){
+      out.push(svgEl("line",{x1:x-5,y1:y1,x2:x+5,y2:y1,stroke:color,"stroke-width":1.3}));
+      out.push(svgEl("line",{x1:x-5,y1:y2,x2:x+5,y2:y2,stroke:color,"stroke-width":1.3}));
+      out.push(svgEl("line",{x1:x,y1:y1,x2:x,y2:y2,stroke:color,"stroke-width":1.3}));
+      chipEnd(x-4, (y1+y2)/2, text, color);
+    }
+
+    // wall
+    out.push(svgEl("rect",{x:wallLeftX,y:wallTopY,width:wallPxW,height:wallPxH,fill:"none",stroke:line,"stroke-width":1.5}));
+
+    // studs
+    if($("showStuds").checked){
+      var spacing = len("studSpacing", 16);
+      var refWall = $("studRefWall").value;
+      var refPos = len("studPos", 0);
+      if(spacing > 0){
+        var refXLeft = (refWall === "right") ? (W - refPos) : refPos;
+        var phase = ((refXLeft % spacing) + spacing) % spacing;
+        var guard = 0;
+        for(var x = phase; x <= W+0.01 && guard < 400; x += spacing, guard++){
+          var xc = Math.max(0, Math.min(x, W));
+          var isRef = Math.abs(xc - refXLeft) < 0.01;
+          var xs = sx(xc);
+          out.push(svgEl("line",{x1:xs,y1:wallTopY,x2:xs,y2:wallBottomY,stroke:stud,"stroke-width":isRef?2:1.1,"stroke-dasharray":isRef?"":"5 5",opacity:isRef?0.95:0.6}));
+          if(isRef){
+            out.push(svgEl("circle",{cx:xs,cy:wallBottomY+10,r:3,fill:stud}));
+            out.push(svgEl("text",{x:xs,y:wallBottomY+22,"text-anchor":"middle","font-size":9.5,fill:stud,"font-weight":600,"letter-spacing":"0.5px"}, "REF"));
+          }
+        }
+        out.push(svgEl("text",{x:wallLeftX+6,y:wallTopY+16,"font-size":10.5,fill:stud,"font-family":"IBM Plex Mono, monospace"}, esc(fmtDisp(spacing)+" O.C. studs")));
+      }
+    }
+
+    // floor / ceiling
+    out.push(svgEl("line",{x1:wallLeftX-8,y1:wallBottomY,x2:wallRightX+8,y2:wallBottomY,stroke:ink,"stroke-width":2.5}));
+    out.push(svgEl("line",{x1:wallLeftX-8,y1:wallTopY,x2:wallRightX+8,y2:wallTopY,stroke:ink,"stroke-width":2.5}));
+    out.push(svgEl("text",{x:wallLeftX,y:wallBottomY+46,"font-size":10.5,fill:inkSoft,"letter-spacing":"1.5px"}, "FLOOR"));
+    out.push(svgEl("text",{x:wallLeftX,y:wallTopY-14,"font-size":10.5,fill:inkSoft,"letter-spacing":"1.5px"}, "CEILING"));
+
+    // product rect
+    if(Pw>0 && Ph>0){
+      var rx = sx(pLeft), rx2 = sx(pRight), ry = sy(pTop), ry2 = sy(pBottom);
+      var rw = rx2-rx, rh = ry2-ry;
+      out.push(svgEl("rect",{x:rx,y:ry,width:Math.max(rw,0),height:Math.max(rh,0),fill:"var(--accent-soft)",stroke:accent,"stroke-width":2,rx:3}));
+      out.push(svgEl("text",{x:rx+rw/2,y:ry+rh/2-4,"text-anchor":"middle","font-size":12.5,fill:ink,"font-weight":600}, esc(name)));
+      out.push(svgEl("text",{x:rx+rw/2,y:ry+rh/2+12,"text-anchor":"middle","font-size":10.5,fill:inkSoft,"font-family":"IBM Plex Mono, monospace"}, esc(fmtDisp(Pw)+" × "+fmtDisp(Ph))));
+
+      hDim(wallLeftX, rx, wallBottomY+28, fmtDisp(pLeft), teal);
+      hDim(rx2, wallRightX, wallBottomY+58, fmtDisp(W-pRight), teal);
+      vDim(wallBottomY, ry2, wallLeftX-24, fmtDisp(pBottom), teal);
+      vDim(ry, wallTopY, wallLeftX-56, fmtDisp(H-pTop), teal);
+
+      // holes: marker + dedicated dimension lines
+      holes.forEach(function(h, i){
+        var hx = sx(h.xAbs), hy = sy(h.yAbs);
+        out.push(svgEl("line",{x1:hx-7,y1:hy,x2:hx+7,y2:hy,stroke:ink,"stroke-width":1.4}));
+        out.push(svgEl("line",{x1:hx,y1:hy-7,x2:hx,y2:hy+7,stroke:ink,"stroke-width":1.4}));
+        out.push(svgEl("circle",{cx:hx,cy:hy,r:3,fill:"none",stroke:ink,"stroke-width":1.2}));
+        var bx=hx+13, by=hy-13;
+        out.push(svgEl("line",{x1:hx+4,y1:hy-4,x2:bx-2,y2:by+2,stroke:holedim,"stroke-width":1}));
+        out.push(svgEl("circle",{cx:bx,cy:by,r:8,fill:holedim}));
+        out.push(svgEl("text",{x:bx,y:by+3.5,"text-anchor":"middle","font-size":10,fill:"#fff","font-weight":700}, h.idx));
+
+        hDim(wallLeftX, hx, wallBottomY+58+30*(i+1), "H"+h.idx+"  "+fmtDisp(h.fromLeft), holedim);
+        vDim(wallBottomY, hy, wallLeftX-56-36*(i+1), "H"+h.idx+"  "+fmtDisp(h.fromFloor), holedim);
+      });
+    }
+
+    svg.innerHTML = out.join("");
+  }
+
+  // ---- unit conversion on toggle ----
+  var currentUnit = "in";
+  function convertAllFieldUnits(oldUnit, newUnit){
+    LENGTH_IDS.forEach(function(id){
+      var el = $(id);
+      if(!el) return;
+      var canonical = parseLength(el.value, oldUnit);
+      if(isFinite(canonical)) el.value = formatLength(canonical, newUnit);
+    });
+    document.querySelectorAll("#holesBody .hole-row").forEach(function(row, i){
+      var xEl = row.querySelector(".holeX"), yEl = row.querySelector(".holeY");
+      if(xEl){ var cx = parseLength(xEl.value, oldUnit); if(isFinite(cx)){ xEl.value = formatLength(cx,newUnit); if(customHoles[i]) customHoles[i].x = cx; } }
+      if(yEl){ var cy = parseLength(yEl.value, oldUnit); if(isFinite(cy)){ yEl.value = formatLength(cy,newUnit); if(customHoles[i]) customHoles[i].y = cy; } }
+    });
+  }
+
+  $("unit").addEventListener("change", function(){
+    var newUnit = this.value;
+    convertAllFieldUnits(currentUnit, newUnit);
+    currentUnit = newUnit;
+    render();
+    save();
+  });
+
+  // ---- persistence (per-viewer convenience only) ----
+  function collectState(){
+    var ids = ["unit","wallW","wallH","prodName","prodW","prodH","pattern","singleY","twoSpacing","twoY",
+      "fourHSpacing","fourVSpacing","fourY","hMode","hValue","vMode","vValue","showStuds","studSpacing",
+      "studRefWall","studPos"];
+    var state = {};
+    ids.forEach(function(id){
+      var el = $(id);
+      if(!el) return;
+      state[id] = (el.type === "checkbox") ? el.checked : el.value;
+    });
+    state.customHoles = customHoles;
+    return state;
+  }
+  function applyState(state){
+    Object.keys(state).forEach(function(id){
+      if(id === "customHoles") return;
+      var el = $(id);
+      if(!el) return;
+      if(el.type === "checkbox") el.checked = !!state[id];
+      else el.value = state[id];
+    });
+    if(Array.isArray(state.customHoles) && state.customHoles.length){
+      customHoles = state.customHoles;
+    }
+  }
+  function save(){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(collectState())); }catch(e){}
+  }
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORE_KEY);
+      if(!raw) return false;
+      applyState(JSON.parse(raw));
+      return true;
+    }catch(e){ return false; }
+  }
+
+  function renderAll(){
+    syncPatternFields();
+    syncPlacementFields();
+    syncStudField();
+    renderHolesTable();
+    render();
+  }
+
+  $("formPanel").addEventListener("input", function(e){
+    if(e.target.id === "unit") return; // handled by its own change listener
+    if(e.target.id === "pattern") syncPatternFields();
+    if(e.target.id === "hMode") syncPlacementFields();
+    if(e.target.id === "showStuds") syncStudField();
+    render();
+    save();
+  });
+  $("formPanel").addEventListener("change", function(e){
+    if(e.target.id === "studRefWall"){ render(); save(); }
+  });
+
+  $("resetBtn").addEventListener("click", function(){
+    try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+    location.reload();
+  });
+
+  var restored = load();
+  currentUnit = $("unit").value;
+  $("exampleNote").hidden = restored;
+  renderAll();
+})();
+</script>
+</body>
+</html>
