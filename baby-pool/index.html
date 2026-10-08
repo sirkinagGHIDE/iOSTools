@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Baby Pool Scoreboard</title>
+<meta name="description" content="Pick the baby's sex, weight and hour of birth to see who wins the baby pool.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single phone column — controls, hour grid, tapped-hour scores, odds, bets, rules */
+:root{
+  --bg:#F3F5F8;--card:#FFFFFF;--ink:#1B2333;--muted:#5E6878;--line:#DCE1E9;--accent:#2F4BA8;--tie:#C3C9D3;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Figtree",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#11151D;--card:#1A202B;--ink:#E8ECF3;--muted:#9AA4B5;--line:#2C3443;--accent:#8EA6F2;--tie:#4A5363;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#11151D;--card:#1A202B;--ink:#E8ECF3;--muted:#9AA4B5;--line:#2C3443;--accent:#8EA6F2;--tie:#4A5363;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:20px 40px;display:grid;gap:18px}
+h1{font-family:var(--display);font-weight:700;font-size:30px;line-height:1.1;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:500;font-size:19px;margin:0 0 10px}
+.sub{color:var(--muted);margin:6px 0 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--bg);padding:4px;border-radius:10px}
+.seg button{font:600 15px var(--body);border:0;border-radius:8px;padding:10px;background:transparent;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.seg button:focus-visible,.cell:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wt{display:flex;align-items:center;gap:12px;margin-top:14px}
+.wt label{color:var(--muted);font-size:14px}
+.wt input{flex:1;min-width:0;accent-color:var(--accent)}
+.wt output{font:500 15px var(--mono);min-width:76px;text-align:right}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-bottom:10px;font-size:13px;color:var(--muted)}
+.sw{width:11px;height:11px;border-radius:3px;display:inline-block;flex:none}
+.lg{display:inline-flex;align-items:center;gap:6px}
+.hrs,.drow{display:grid;grid-template-columns:30px repeat(24,minmax(0,1fr));gap:2px;align-items:center}
+.hrs{font:400 11px var(--mono);color:var(--muted);margin-bottom:3px}
+.hrs span{grid-column:span 4}
+.hrs span:first-child{grid-column:span 1}
+.drow{margin-bottom:3px}
+.drow b{font-size:12px;font-weight:600;color:var(--muted)}
+.cell{height:28px;border-radius:3px;border:0;padding:0;cursor:pointer}
+.cell.sel{outline:2px solid var(--ink);outline-offset:1px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.row:last-child{border-bottom:0}
+.row .n{display:flex;align-items:center;gap:8px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.lead{font-weight:600}
+.meta{font-size:13px;color:var(--muted);margin:0 0 8px}
+.bar{height:6px;border-radius:3px;background:var(--line);margin-top:4px;overflow:hidden}
+.bar i{display:block;height:100%}
+.odds .row{display:grid;grid-template-columns:1fr 64px 58px;gap:10px}
+.odds .row>span:not(:first-child){text-align:right}
+.bets .row{display:grid;grid-template-columns:72px 1fr;gap:10px}
+ul{margin:0;padding-left:18px}
+li{margin:3px 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Baby pool scoreboard</h1>
+    <p class="sub">Pick the sex and weight, then tap any hour from Friday to Monday to see who would win.</p>
+  </header>
+
+  <section class="card">
+    <div class="seg" role="group" aria-label="Baby's sex">
+      <button id="bG" aria-pressed="true">Girl</button>
+      <button id="bB" aria-pressed="false">Boy</button>
+    </div>
+    <div class="wt">
+      <label for="w">Weight</label>
+      <input type="range" id="w" min="88" max="168" step="1" value="118">
+      <output id="wo" class="num">7 lb 6 oz</output>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Winner by hour of birth</h2>
+    <div class="legend" id="legend"></div>
+    <div class="hrs"><span></span><span>12a</span><span>4a</span><span>8a</span><span>12p</span><span>4p</span><span>8p</span></div>
+    <div id="grid"></div>
+  </section>
+
+  <section class="card">
+    <h2 id="dt">Scores</h2>
+    <div id="detail"></div>
+  </section>
+
+  <section class="card odds">
+    <h2>Pre-birth odds</h2>
+    <p class="meta">From 200,000 simulated births: 50/50 sex, weight around 7 lb 6 oz, any hour Fri–Mon equally likely.</p>
+    <div id="odds"></div>
+  </section>
+
+  <section class="card bets">
+    <h2>The bets</h2>
+    <div id="bets"></div>
+  </section>
+
+  <section class="card">
+    <h2>Scoring</h2>
+    <ul>
+      <li>+15 for the correct sex</li>
+      <li>−1 per ounce off, high or low</li>
+      <li>−2 per day off, early or late</li>
+      <li>−1 per full hour off on the clock time (the day is scored separately)</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const P={
+  Naomi:{oz:160,d:3,h:0+1/60,s:'B',c:'#8A8F99',bet:'Mon 12:01am · boy · 10 lb',win:0.3,ev:-49.0},
+  Marina:{oz:121,d:2,h:17,s:'G',c:'#D4537E',bet:'Sun 5:00pm · girl · 7 lb 9 oz',win:19.8,ev:-7.8},
+  Austin:{oz:112,d:2,h:21.5,s:'G',c:'#7F77DD',bet:'Sun 9:30pm · girl · 7 lb 0 oz',win:6.7,ev:-11.9},
+  Marc:{oz:115,d:0,h:7+47/60,s:'G',c:'#1D9E75',bet:'Fri 7:47am · girl · 7 lb 3 oz',win:18.9,ev:-8.6},
+  Ben:{oz:104,d:1,h:17,s:'G',c:'#C28A1E',bet:'Sat 5:00pm · girl · 6 lb 8 oz',win:5.1,ev:-15.3},
+  Wendy:{oz:114,d:2,h:13+17/60,s:'B',c:'#378ADD',bet:'Sun 1:17pm · boy · 7 lb 2 oz',win:21.5,ev:-7.2},
+  Allie:{oz:119,d:2,h:15+47/60,s:'B',c:'#D85A30',bet:'Sun 3:47pm · boy · 7 lb 7 oz',win:27.8,ev:-7.0}
+};
+const D=['Fri','Sat','Sun','Mon'],DL=['Friday','Saturday','Sunday','Monday'];
+let S='G',sel=[2,12];
+const $=id=>document.getElementById(id);
+const score=(p,oz,d,h)=>{const b=P[p];return -Math.abs(oz-b.oz)-2*Math.abs(d-b.d)+(S===b.s?15:0)-Math.floor(Math.abs(h-b.h))};
+const fmt=h=>{const r=Math.floor(h)%24;return (r%12||12)+(r<12?'am':'pm')};
+const lbs=oz=>Math.floor(oz/16)+' lb '+(oz%16)+' oz';
+const rank=(oz,d,h)=>Object.keys(P).map(p=>[p,score(p,oz,d,h+0.5)]).sort((a,b)=>b[1]-a[1]);
+
+function draw(){
+  const oz=+$('w').value;
+  $('wo').textContent=lbs(oz);
+  $('bG').setAttribute('aria-pressed',S==='G');
+  $('bB').setAttribute('aria-pressed',S==='B');
+  let g='',seen={};
+  for(let d=0;d<D.length;d++){
+    g+='<div class="drow"><b>'+D[d]+'</b>';
+    for(let h=0;h<24;h++){
+      const r=rank(oz,d,h),tie=r[0][1]===r[1][1];
+      if(tie)seen._t=1;else seen[r[0][0]]=1;
+      const isSel=sel[0]===d&&sel[1]===h;
+      g+='<button class="cell'+(isSel?' sel':'')+'" data-d="'+d+'" data-h="'+h+'" style="background:'+(tie?'var(--tie)':P[r[0][0]].c)+'" aria-label="'+DL[d]+' '+fmt(h)+': '+(tie?'tie':r[0][0])+'"></button>';
+    }
+    g+='</div>';
+  }
+  $('grid').innerHTML=g;
+  let l='';
+  for(const p in P)if(seen[p])l+='<span class="lg"><span class="sw" style="background:'+P[p].c+'"></span>'+p+'</span>';
+  if(seen._t)l+='<span class="lg"><span class="sw" style="background:var(--tie)"></span>Tie</span>';
+  $('legend').innerHTML=l;
+  const[d,h]=sel,r=rank(oz,d,h);
+  $('dt').textContent='Scores if born '+DL[d]+' '+fmt(h)+'–'+fmt(h+1);
+  $('detail').innerHTML=r.map(([p,v],i)=>'<div class="row"><span class="n"><span class="sw" style="background:'+P[p].c+'"></span><span class="'+(v===r[0][1]?'lead':'')+'">'+p+'</span></span><span class="num '+(v===r[0][1]?'lead':'')+'">'+(v>0?'+':v<0?'−':'')+Math.abs(v)+'</span></div>').join('');
+}
+
+$('grid').addEventListener('click',e=>{const c=e.target.closest('.cell');if(!c)return;sel=[+c.dataset.d,+c.dataset.h];draw()});
+$('bG').onclick=()=>{S='G';draw()};
+$('bB').onclick=()=>{S='B';draw()};
+$('w').addEventListener('input',draw);
+
+const names=Object.keys(P).sort((a,b)=>P[b].win-P[a].win);
+$('odds').innerHTML='<div class="row meta" style="margin:0"><span>Bettor</span><span>Win %</span><span>Avg</span></div>'+names.map(p=>'<div class="row"><span><span class="n"><span class="sw" style="background:'+P[p].c+'"></span>'+p+'</span><div class="bar"><i style="width:'+(P[p].win/28*100)+'%;background:'+P[p].c+'"></i></div></span><span class="num">'+P[p].win.toFixed(1)+'%</span><span class="num">'+('−'+Math.abs(P[p].ev).toFixed(1))+'</span></div>').join('');
+$('bets').innerHTML=Object.keys(P).map(p=>'<div class="row"><span class="n"><span class="sw" style="background:'+P[p].c+'"></span>'+p+'</span><span>'+P[p].bet+'</span></div>').join('');
+draw();
+</script>
+</body>
+</html>
