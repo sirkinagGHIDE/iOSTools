@@ -62,7 +62,7 @@ li{margin:3px 0}
 <div class="wrap">
   <header>
     <h1>Baby pool scoreboard</h1>
-    <p class="sub">Pick the sex and weight, then tap any hour from Friday to Sunday to see who would win.</p>
+    <p class="sub">Pick the sex and weight, then tap any hour from Friday to Monday to see who would win.</p>
   </header>
 
   <section class="card">
@@ -91,7 +91,7 @@ li{margin:3px 0}
 
   <section class="card odds">
     <h2>Pre-birth odds</h2>
-    <p class="meta">From 200,000 simulated births: 50/50 sex, weight around 7 lb 6 oz, any hour Fri–Sun equally likely.</p>
+    <p class="meta">From 200,000 simulated births: 50/50 sex, weight around 7 lb 6 oz, any hour Fri–Mon equally likely.</p>
     <div id="odds"></div>
   </section>
 
@@ -113,15 +113,15 @@ li{margin:3px 0}
 
 <script>
 const P={
-  Naomi:{oz:160,d:3,h:0+1/60,s:'B',c:'#8A8F99',bet:'Mon 12:01am · boy · 10 lb',win:0.2,ev:-50.0},
-  Marina:{oz:121,d:2,h:17,s:'G',c:'#D4537E',bet:'Sun 5:00pm · girl · 7 lb 9 oz',win:18.1,ev:-7.9},
-  Austin:{oz:112,d:2,h:21.5,s:'G',c:'#7F77DD',bet:'Sun 9:30pm · girl · 7 lb 0 oz',win:6.3,ev:-11.9},
-  Marc:{oz:115,d:0,h:7+47/60,s:'G',c:'#1D9E75',bet:'Fri 7:47am · girl · 7 lb 3 oz',win:20.8,ev:-7.6},
-  Ben:{oz:104,d:1,h:17,s:'G',c:'#C28A1E',bet:'Sat 5:00pm · girl · 6 lb 8 oz',win:5.3,ev:-14.6},
-  Wendy:{oz:114,d:2,h:13+17/60,s:'B',c:'#378ADD',bet:'Sun 1:17pm · boy · 7 lb 2 oz',win:21.5,ev:-7.3},
+  Naomi:{oz:160,d:3,h:0+1/60,s:'B',c:'#8A8F99',bet:'Mon 12:01am · boy · 10 lb',win:0.3,ev:-49.0},
+  Marina:{oz:121,d:2,h:17,s:'G',c:'#D4537E',bet:'Sun 5:00pm · girl · 7 lb 9 oz',win:19.8,ev:-7.8},
+  Austin:{oz:112,d:2,h:21.5,s:'G',c:'#7F77DD',bet:'Sun 9:30pm · girl · 7 lb 0 oz',win:6.7,ev:-11.9},
+  Marc:{oz:115,d:0,h:7+47/60,s:'G',c:'#1D9E75',bet:'Fri 7:47am · girl · 7 lb 3 oz',win:18.9,ev:-8.6},
+  Ben:{oz:104,d:1,h:17,s:'G',c:'#C28A1E',bet:'Sat 5:00pm · girl · 6 lb 8 oz',win:5.1,ev:-15.3},
+  Wendy:{oz:114,d:2,h:13+17/60,s:'B',c:'#378ADD',bet:'Sun 1:17pm · boy · 7 lb 2 oz',win:21.5,ev:-7.2},
   Allie:{oz:119,d:2,h:15+47/60,s:'B',c:'#D85A30',bet:'Sun 3:47pm · boy · 7 lb 7 oz',win:27.8,ev:-7.0}
 };
-const D=['Fri','Sat','Sun'],DL=['Friday','Saturday','Sunday'];
+const D=['Fri','Sat','Sun','Mon'],DL=['Friday','Saturday','Sunday','Monday'];
 let S='G',sel=[2,12];
 const $=id=>document.getElementById(id);
 const score=(p,oz,d,h)=>{const b=P[p];return -Math.abs(oz-b.oz)-2*Math.abs(d-b.d)+(S===b.s?15:0)-Math.floor(Math.abs(h-b.h))};
@@ -135,7 +135,7 @@ function draw(){
   $('bG').setAttribute('aria-pressed',S==='G');
   $('bB').setAttribute('aria-pressed',S==='B');
   let g='',seen={};
-  for(let d=0;d<3;d++){
+  for(let d=0;d<D.length;d++){
     g+='<div class="drow"><b>'+D[d]+'</b>';
     for(let h=0;h<24;h++){
       const r=rank(oz,d,h),tie=r[0][1]===r[1][1];
