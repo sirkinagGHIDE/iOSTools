@@ -106,25 +106,26 @@ li{margin:3px 0}
       <li>+15 for the correct sex</li>
       <li>−1 per ounce off, high or low</li>
       <li>−2 per day off, early or late</li>
-      <li>−1 per full hour off on the clock time (the day is scored separately)</li>
+      <li>−1 per full hour off on the clock, measured the short way around (11pm vs 7:47am is 8 hrs 47 min, so −8); max −12. The day is scored separately.</li>
     </ul>
   </section>
 </div>
 
 <script>
 const P={
-  Naomi:{oz:160,d:3,h:0+1/60,s:'B',c:'#8A8F99',bet:'Mon 12:01am · boy · 10 lb',win:0.3,ev:-49.0},
-  Marina:{oz:121,d:2,h:17,s:'G',c:'#D4537E',bet:'Sun 5:00pm · girl · 7 lb 9 oz',win:19.8,ev:-7.8},
-  Austin:{oz:112,d:2,h:21.5,s:'G',c:'#7F77DD',bet:'Sun 9:30pm · girl · 7 lb 0 oz',win:6.7,ev:-11.9},
-  Marc:{oz:115,d:0,h:7+47/60,s:'G',c:'#1D9E75',bet:'Fri 7:47am · girl · 7 lb 3 oz',win:18.9,ev:-8.6},
-  Ben:{oz:104,d:1,h:17,s:'G',c:'#C28A1E',bet:'Sat 5:00pm · girl · 6 lb 8 oz',win:5.1,ev:-15.3},
-  Wendy:{oz:114,d:2,h:13+17/60,s:'B',c:'#378ADD',bet:'Sun 1:17pm · boy · 7 lb 2 oz',win:21.5,ev:-7.2},
-  Allie:{oz:119,d:2,h:15+47/60,s:'B',c:'#D85A30',bet:'Sun 3:47pm · boy · 7 lb 7 oz',win:27.8,ev:-7.0}
+  Naomi:{oz:160,d:3,h:0+1/60,s:'B',c:'#8A8F99',bet:'Mon 12:01am · boy · 10 lb',win:0.3,ev:-43.0},
+  Marina:{oz:121,d:2,h:17,s:'G',c:'#D4537E',bet:'Sun 5:00pm · girl · 7 lb 9 oz',win:21.4,ev:-6.8},
+  Austin:{oz:112,d:2,h:21.5,s:'G',c:'#7F77DD',bet:'Sun 9:30pm · girl · 7 lb 0 oz',win:9.7,ev:-8.1},
+  Marc:{oz:115,d:0,h:7+47/60,s:'G',c:'#1D9E75',bet:'Fri 7:47am · girl · 7 lb 3 oz',win:14.2,ev:-7.8},
+  Ben:{oz:104,d:1,h:17,s:'G',c:'#C28A1E',bet:'Sat 5:00pm · girl · 6 lb 8 oz',win:5.2,ev:-14.2},
+  Wendy:{oz:114,d:2,h:13+17/60,s:'B',c:'#378ADD',bet:'Sun 1:17pm · boy · 7 lb 2 oz',win:20.9,ev:-7.2},
+  Allie:{oz:119,d:2,h:15+47/60,s:'B',c:'#D85A30',bet:'Sun 3:47pm · boy · 7 lb 7 oz',win:28.4,ev:-6.5}
 };
 const D=['Fri','Sat','Sun','Mon'],DL=['Friday','Saturday','Sunday','Monday'];
 let S='G',sel=[2,12];
 const $=id=>document.getElementById(id);
-const score=(p,oz,d,h)=>{const b=P[p];return -Math.abs(oz-b.oz)-2*Math.abs(d-b.d)+(S===b.s?15:0)-Math.floor(Math.abs(h-b.h))};
+const hrs=(a,b)=>{const x=Math.abs(a-b)%24;return Math.floor(Math.min(x,24-x))};
+const score=(p,oz,d,h)=>{const b=P[p];return -Math.abs(oz-b.oz)-2*Math.abs(d-b.d)+(S===b.s?15:0)-hrs(h,b.h)};
 const fmt=h=>{const r=Math.floor(h)%24;return (r%12||12)+(r<12?'am':'pm')};
 const lbs=oz=>Math.floor(oz/16)+' lb '+(oz%16)+' oz';
 const rank=(oz,d,h)=>Object.keys(P).map(p=>[p,score(p,oz,d,h+0.5)]).sort((a,b)=>b[1]-a[1]);
@@ -160,8 +161,8 @@ $('bG').onclick=()=>{S='G';draw()};
 $('bB').onclick=()=>{S='B';draw()};
 $('w').addEventListener('input',draw);
 
-const names=Object.keys(P).sort((a,b)=>P[b].win-P[a].win);
-$('odds').innerHTML='<div class="row meta" style="margin:0"><span>Bettor</span><span>Win %</span><span>Avg</span></div>'+names.map(p=>'<div class="row"><span><span class="n"><span class="sw" style="background:'+P[p].c+'"></span>'+p+'</span><div class="bar"><i style="width:'+(P[p].win/28*100)+'%;background:'+P[p].c+'"></i></div></span><span class="num">'+P[p].win.toFixed(1)+'%</span><span class="num">'+('−'+Math.abs(P[p].ev).toFixed(1))+'</span></div>').join('');
+const names=Object.keys(P).sort((a,b)=>P[b].win-P[a].win),best=P[names[0]].win;
+$('odds').innerHTML='<div class="row meta" style="margin:0"><span>Bettor</span><span>Win %</span><span>Avg</span></div>'+names.map(p=>'<div class="row"><span><span class="n"><span class="sw" style="background:'+P[p].c+'"></span>'+p+'</span><div class="bar"><i style="width:'+(P[p].win/best*100)+'%;background:'+P[p].c+'"></i></div></span><span class="num">'+P[p].win.toFixed(1)+'%</span><span class="num">'+('−'+Math.abs(P[p].ev).toFixed(1))+'</span></div>').join('');
 $('bets').innerHTML=Object.keys(P).map(p=>'<div class="row"><span class="n"><span class="sw" style="background:'+P[p].c+'"></span>'+p+'</span><span>'+P[p].bet+'</span></div>').join('');
 draw();
 </script>
